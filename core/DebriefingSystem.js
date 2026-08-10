@@ -79,7 +79,7 @@ export class DebriefingSystem {
         },
         criticalActionPenalties: {
           callSeniorTraumaHelp: 25,      // Can't score above 25% without senior call
-          immobiliseAndPad: 30,          // Can't score above 30% without immobilization
+          supportLimbInPositionFound: 30, // Can't score above 30% without support (first step of immobilization)
           checkDistalPulse: 35           // Can't score above 35% without neuro check
         }
       },
@@ -92,10 +92,11 @@ export class DebriefingSystem {
           technique: 0.10  // Less about technique, more about recognition
         },
         criticalActionPenalties: {
-          recogniseSepsis: 20,               // Can't score above 20% without recognition
+          // Sepsis recognition is implied by calling for senior help + performing the bundle
+          // Don't penalize explicit recognition alone; instead penalize missing intervention bundle
+          callSeniorSepsisHelp: 20,      // Can't score above 20% without escalation
           administerAntibioticsAsPrescribed: 25,  // Can't score above 25% without antibiotics
-          callSeniorSepsisHelp: 30,          // Can't score above 30% without escalation
-          establishIVAccess: 30              // Can't score above 30% without IV access
+          establishIVAccess: 30          // Can't score above 30% without IV access
         }
       },
 
@@ -872,7 +873,7 @@ export class DebriefingSystem {
     }
   }
 
-  // Generate human-readable debrief feedback
+  // Generate human-readable debrief feedback with enhanced pedagogical content
   _generateFeedback(debrief, scenarioId) {
     const feedback = [];
 
@@ -891,24 +892,28 @@ export class DebriefingSystem {
       level: debrief.competencyLevel.label
     });
 
-    // Summary
+    // 1. PATIENT OUTCOME NARRATIVE
     feedback.push({
-      type: "summary",
-      text: debrief.competencyLevel.description
+      type: "section",
+      title: "🏥 PATIENT OUTCOME",
+      content: this._getOutcomeNarrative(debrief, scenarioId)
     });
 
-    // Score breakdown
+    // 2. SCORE BREAKDOWN WITH VISUALIZATION
     feedback.push({
-      type: "scores",
-      data: {
-        "Timing": `${debrief.scores.timing}%`,
-        "Sequence": `${debrief.scores.sequence}%`,
-        "Technique": `${debrief.scores.technique}%`,
-        "Outcome": `${debrief.scores.outcome}%`
-      }
+      type: "section",
+      title: "📊 YOUR PERFORMANCE",
+      content: this._formatScoreVisualization(debrief)
     });
 
-    // Learning points
+    // 3. CLINICAL IMPACT
+    feedback.push({
+      type: "section",
+      title: "⚕️ CLINICAL IMPACT",
+      content: this._calculateClinicalImpact(debrief, scenarioId)
+    });
+
+    // 4. WHAT WENT WELL & WHAT NEEDS WORK
     if (debrief.learningPoints.length > 0) {
       const strengths = debrief.learningPoints.filter(p => p.category === "strength");
       const concerns = debrief.learningPoints.filter(p => p.category !== "strength");
@@ -916,15 +921,18 @@ export class DebriefingSystem {
       if (strengths.length > 0) {
         feedback.push({
           type: "section",
-          title: "What You Did Well",
-          items: strengths.map(p => `${p.point}: ${p.guidance}`)
+          title: "⭐ WHAT YOU DID WELL",
+          items: strengths.map(p => ({
+            title: p.point,
+            guidance: p.guidance
+          }))
         });
       }
 
       if (concerns.length > 0) {
         feedback.push({
           type: "section",
-          title: "Areas for Improvement",
+          title: "❌ AREAS FOR IMPROVEMENT",
           items: concerns.map(p => ({
             severity: p.severity,
             title: p.point,
@@ -935,13 +943,299 @@ export class DebriefingSystem {
       }
     }
 
-    // Next steps
+    // 5. DRILL RECOMMENDATIONS
+    feedback.push({
+      type: "section",
+      title: "🎯 PRACTICE DRILLS",
+      content: this._generateDrillRecommendations(debrief, scenarioId)
+    });
+
+    // 6. NEXT STEPS
     feedback.push({
       type: "next_steps",
       text: this._getNextStepsGuidance(debrief.competencyLevel.level)
     });
 
     return feedback;
+  }
+
+  // Generate patient outcome narrative (clinical storytelling)
+  _getOutcomeNarrative(debrief, scenarioId) {
+    const finalState = debrief.summary.finalState || {};
+    
+    if (scenarioId === "cardiac-arrest-adult") {
+      const rhythmState = finalState.rhythmState;
+      if (rhythmState === "rosc") {
+        return `✅ ROSC achieved at ${this._estimateROSCTime(debrief)} minutes.\n\n` +
+               `Your rapid recognition and systematic Chain of Survival approach resulted in return of spontaneous circulation. ` +
+               `The patient has a realistic chance of neurologically intact survival.\n\n` +
+               `Survival probability: ~60% (with your actions) vs ~5% (without CPR).\n\n` +
+               `Post-ROSC: Patient requires ongoing monitoring, advanced life support, and investigation of cause.`;
+      } else if (rhythmState === "rosc_pending") {
+        return `⚠️ Cardiac arrest ongoing. CPR in progress.\n\n` +
+               `You initiated appropriate resuscitation, but ROSC has not yet been achieved. ` +
+               `Continue CPR, maintain high-quality compressions, and escalate to ICU if available.`;
+      } else {
+        return `❌ Cardiac arrest was not reversed.\n\n` +
+               `Without CPR, chest compressions, and defibrillation, the patient's chance of survival was very low. ` +
+               `Critical actions missing: ${this._listMissingCriticalActions(debrief)}`;
+      }
+    }
+    
+    if (scenarioId === "fractured-femur-adult") {
+      const consciousness = finalState.consciousness || 0;
+      const bp = finalState.bloodPressureSystolic || 0;
+      if (consciousness > 0.7 && bp > 100) {
+        return `✅ Patient stable and ready for safe transfer.\n\n` +
+               `Your rapid neurovascular assessment, immobilization, and bleeding control prevented further deterioration. ` +
+               `Limb perfusion is maintained. The patient can now be safely transferred to orthopedic surgery.\n\n` +
+               `Survival probability: ~95% (with your care) vs ~70% (with delayed immobilization).`;
+      } else if (consciousness > 0.3) {
+        return `⚠️ Patient conscious but showing signs of shock.\n\n` +
+               `Immobilization and monitoring are in place, but the patient is deteriorating. ` +
+               `Escalation to senior trauma is urgent. Blood loss is ongoing.`;
+      } else {
+        return `❌ Patient is critically unstable.\n\n` +
+               `Without early immobilization and senior escalation, internal hemorrhage has progressed. ` +
+               `Critical actions missing: ${this._listMissingCriticalActions(debrief)}`;
+      }
+    }
+
+    if (scenarioId === "sepsis-adult") {
+      const bp = finalState.bloodPressureSystolic || 0;
+      const consciousness = finalState.consciousness || 0;
+      if (bp >= 90 && consciousness > 0.6) {
+        return `✅ Septic shock reversed. Perfusion restored.\n\n` +
+               `Your rapid recognition, senior escalation, early antibiotics, and fluid resuscitation have improved the patient's perfusion. ` +
+               `Lactate is clearing. Organ function is improving.\n\n` +
+               `30-day mortality probability: ~15% (with your care) vs ~40% (with delayed antibiotics).`;
+      } else if (bp >= 80) {
+        return `⚠️ Patient improving but remains at risk.\n\n` +
+               `Blood pressure has responded to fluids, but the patient remains at high risk of deterioration. ` +
+               `Continued ICU monitoring and escalation are essential.`;
+      } else {
+        return `❌ Septic shock not reversed.\n\n` +
+               `Without early antibiotics and fluid resuscitation, the patient remains in shock. ` +
+               `Critical actions missing: ${this._listMissingCriticalActions(debrief)}`;
+      }
+    }
+
+    if (scenarioId === "anaphylaxis-paediatric") {
+      const breathing = finalState.respiratoryRate || 30;
+      const consciousness = finalState.consciousness || 0;
+      if (consciousness > 0.7 && breathing > 12 && breathing < 35) {
+        return `✅ Anaphylaxis controlled. Airway patent, breathing adequate.\n\n` +
+               `Your immediate IM adrenaline and airway management prevented catastrophic deterioration. ` +
+               `The child is now stable and can be monitored for biphasic reaction.\n\n` +
+               `Survival probability: ~99% (with your care) vs ~50% (without IM adrenaline).`;
+      } else if (consciousness > 0.3) {
+        return `⚠️ Child improving but airway remains at risk.\n\n` +
+               `IM adrenaline has helped, but the child still shows signs of airway compromise. ` +
+               `Prepare for potential intubation. Senior pediatric help is essential.`;
+      } else {
+        return `❌ Anaphylaxis not controlled. Airway at critical risk.\n\n` +
+               `Without immediate IM adrenaline, the child's airway has compromised. ` +
+               `Critical actions missing: ${this._listMissingCriticalActions(debrief)}`;
+      }
+    }
+
+    return "Assessment pending...";
+  }
+
+  // Format score as ASCII visualization
+  _formatScoreVisualization(debrief) {
+    const s = debrief.scores;
+    const o = debrief.summary.overallScore;
+
+    const bar = (pct) => {
+      const filled = Math.round(pct / 5);
+      const empty = 20 - filled;
+      return "█".repeat(filled) + "░".repeat(empty);
+    };
+
+    return (
+      `Outcome     : ${s.outcome}%  ${bar(s.outcome)}  (Patient result)\n` +
+      `Timing      : ${s.timing}%   ${bar(s.timing)}  (Speed of actions)\n` +
+      `Sequence    : ${s.sequence}%  ${bar(s.sequence)}  (Correct order)\n` +
+      `Technique   : ${s.technique}%  ${bar(s.technique)}  (Quality of actions)\n` +
+      `${"─".repeat(60)}\n` +
+      `OVERALL     : ${o}%  ${bar(o)}  ${this._competencyLabel(o)}`
+    );
+  }
+
+  // Calculate and explain clinical impact
+  _calculateClinicalImpact(debrief, scenarioId) {
+    const actionLog = debrief.actionLog || {};
+    const scores = debrief.scores;
+
+    if (scenarioId === "cardiac-arrest-adult") {
+      const criticalFailures = debrief.learningPoints.filter(p => p.category === "critical");
+      if (criticalFailures.length > 0) {
+        return `❌ MORTALITY IMPACT\n\n` +
+               `Missing actions: ${criticalFailures.map(f => f.point).join(", ")}\n\n` +
+               `Without CPR alone: Survival drops from 60% to <5%.\n` +
+               `Each minute of delay in CPR: -10% survival probability.`;
+      } else {
+        return `✅ SURVIVAL IMPACT\n\n` +
+               `Your Chain of Survival approach:\n` +
+               `- Recognition (${actionLog.checkResponse?.timestamp || 0}ms): On time\n` +
+               `- CPR (${actionLog.cprCompressions?.timestamp || 0}ms): On time\n` +
+               `- Defibrillation (${actionLog.applyAEDPads?.timestamp || 0}ms): On time\n\n` +
+               `Result: Survival probability +55% vs untreated arrest.`;
+      }
+    }
+
+    if (scenarioId === "fractured-femur-adult") {
+      const criticalFailures = debrief.learningPoints.filter(p => p.category === "critical");
+      if (criticalFailures.length > 0) {
+        return `❌ HEMORRHAGE RISK\n\n` +
+               `A femoral fracture can bleed 1-1.5L into the thigh compartment within minutes.\n` +
+               `Missing: ${criticalFailures.map(f => f.point).join(", ")}\n\n` +
+               `Result: Uncontrolled hemorrhage → hypovolemic shock → organ failure.`;
+      } else {
+        return `✅ HEMORRHAGE CONTROLLED\n\n` +
+               `Early immobilization reduces ongoing bleed rate by 80%.\n` +
+               `Early senior escalation allows rapid orthopedic intervention.\n\n` +
+               `Result: Limb saved, life saved.`;
+      }
+    }
+
+    if (scenarioId === "sepsis-adult") {
+      const delay = actionLog.administerAntibioticsAsPrescribed?.timestamp || null;
+      if (delay && delay > 3600000) {
+        const delayMinutes = Math.round(delay / 60000);
+        const mortalityIncrease = Math.round((delayMinutes - 60) / 60 * 8); // 8% per hour delay
+        return `❌ MORTALITY IMPACT OF DELAY\n\n` +
+               `Antibiotic given at: ${delayMinutes} minutes (target <60 min)\n` +
+               `Delay: +${delayMinutes - 60} minutes\n\n` +
+               `Each hour delay = +8% mortality increase.\n` +
+               `Your delay cost: +${mortalityIncrease}% increased mortality risk.`;
+      } else {
+        return `✅ SEPSIS BUNDLE COMPLETED ON TIME\n\n` +
+               `Antibiotics <60 min: 30-day mortality ~15%\n` +
+               `Antibiotics >1 hour: 30-day mortality ~40%\n\n` +
+               `Your rapid action likely saved this patient's life.`;
+      }
+    }
+
+    if (scenarioId === "anaphylaxis-paediatric") {
+      const delay = actionLog.giveIMAdrenaline?.timestamp || null;
+      if (!delay) {
+        return `❌ CATASTROPHIC OUTCOME PREVENTED\n\n` +
+               `IM adrenaline is ONLY first-line treatment for anaphylaxis.\n` +
+               `Without it: airway edema → airway obstruction → cardiac arrest → death.\n\n` +
+               `Survival without adrenaline: ~10%\n` +
+               `Survival with immediate adrenaline: ~99%`;
+      } else {
+        return `✅ AIRWAY PROTECTED\n\n` +
+               `Immediate IM adrenaline (${Math.round(delay / 1000)}s) prevented airway closure.\n` +
+               `Biphasic reaction risk remains (<2%) but manageable.\n\n` +
+               `Likely outcome: Full recovery with observation.`;
+      }
+    }
+
+    return "Impact calculation pending...";
+  }
+
+  // Generate specific drill recommendations
+  _generateDrillRecommendations(debrief, scenarioId) {
+    const level = debrief.competencyLevel.level;
+    const scores = debrief.scores;
+    const criticalFailures = debrief.learningPoints.filter(p => p.category === "critical");
+
+    if (criticalFailures.length > 0) {
+      // Fail: Intensive drills on missing critical actions
+      return this._getDrillsForFailedScenario(scenarioId, criticalFailures);
+    }
+
+    if (level === "gold_standard") {
+      return `🏆 MASTERY MAINTENANCE\n\n` +
+             `You've achieved gold standard performance. Focus on:\n\n` +
+             `1. Scenario repetition (2x per month)\n` +
+             `   Duration: 10 min full scenario\n` +
+             `   Goal: Maintain speed and consistency\n\n` +
+             `2. Stress inoculation\n` +
+             `   Duration: Timed 5-min drills with distractions\n` +
+             `   Goal: Performance under pressure\n\n` +
+             `3. Teach others\n` +
+             `   Mentor junior trainees on this scenario\n` +
+             `   Teaching reinforces your own learning`;
+    }
+
+    if (level === "pass") {
+      // Pass: Target weakest pillar
+      const weakest = Object.keys(scores).reduce((a, b) =>
+        scores[a] < scores[b] ? a : b
+      );
+      return this._getDrillsForPassedScenario(scenarioId, weakest);
+    }
+
+    return "Drill recommendations pending...";
+  }
+
+  _getDrillsForFailedScenario(scenarioId, criticalFailures) {
+    const failurePoints = criticalFailures.map(f => f.point).join(", ");
+    
+    return `🚨 URGENT: CRITICAL GAPS DETECTED\n\n` +
+           `Missing: ${failurePoints}\n\n` +
+           `IMMEDIATE ACTION REQUIRED:\n\n` +
+           `Week 1: Daily 5-minute focused drills\n` +
+           `- Focus: Recognition + initial action only\n` +
+           `- Goal: Automatic response to scenario trigger\n` +
+           `- Success: 3 consecutive perfect runs\n\n` +
+           `Week 2: Full scenario with supervisor observation\n` +
+           `- Focus: End-to-end sequence\n` +
+           `- Goal: Unsupervised competence\n` +
+           `- Success: Score >70%\n\n` +
+           `Week 3: Scenario reassessment\n` +
+           `- Goal: Demonstrate >80% proficiency\n\n` +
+           `⚠️ Do NOT practice on real patients until reassessment passed.`;
+  }
+
+  _getDrillsForPassedScenario(scenarioId, weakestPillar) {
+    const drillMap = {
+      "outcome": `Patient result management (highest priority if outcome weak)`,
+      "timing": `Timed recognition + first action (<2 min drill)`,
+      "sequence": `Sequence recall (no time pressure initially)`,
+      "technique": `Technical quality (CPR manikin, airway models, etc.)`
+    };
+
+    return `🎯 TARGETED SKILL DEVELOPMENT\n\n` +
+           `Your weakest area: ${weakestPillar} (${drillMap[weakestPillar]})\n\n` +
+           `THIS WEEK (30 min):\n` +
+           `- 5x 5-minute drills on ${weakestPillar}\n` +
+           `- Record yourself; review for errors\n` +
+           `- Target: +10% improvement\n\n` +
+           `NEXT WEEK (30 min):\n` +
+           `- Full scenario attempt\n` +
+           `- Verify ${weakestPillar} improvement held\n` +
+           `- Target: Score >75%\n\n` +
+           `BEFORE NEXT ASSESSMENT:\n` +
+           `- Scenario repetition x2\n` +
+           `- Target: Consistent >85%`;
+  }
+
+  // Helper: Estimate ROSC time
+  _estimateROSCTime(debrief) {
+    const actionLog = debrief.actionLog || {};
+    const shockTime = actionLog.shockIfAdvised?.timestamp || 0;
+    return (shockTime / 1000 / 60).toFixed(1);
+  }
+
+  // Helper: List missing critical actions
+  _listMissingCriticalActions(debrief) {
+    return debrief.learningPoints
+      .filter(p => p.category === "critical")
+      .map(p => p.point.replace("CRITICAL FAILURE: ", ""))
+      .join(", ");
+  }
+
+  // Helper: Competency label
+  _competencyLabel(score) {
+    if (score >= 85) return "🏆 Gold Standard";
+    if (score >= 70) return "✅ Pass";
+    if (score >= 55) return "⚠️ Borderline";
+    return "❌ Fail";
   }
 
   // Next steps guidance
