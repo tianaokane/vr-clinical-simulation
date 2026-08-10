@@ -422,9 +422,9 @@
     }
   ],
 
-  "actionMappings": {
+  "actions": {
     "checkResponse": {
-    "label": "Check Response",
+      "label": "Check Response",
     "group": "Assessment",
     "instruction": "Shout clearly and tap both shoulders: 'Are you alright?'",
     "completionOnly": true,

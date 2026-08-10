@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "name": "vr-clinical-simulation",
+  "version": "1.0.0",
+  "description": "VR first aid training simulator"
+}
