@@ -1,3 +1,4 @@
+import * as THREE from 'https://esm.sh/three@0.160.0';
 export class InputHandler {
   constructor(scene, renderer) {
     this.scene = scene;
