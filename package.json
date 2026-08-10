@@ -2,5 +2,8 @@
   "type": "module",
   "name": "vr-clinical-simulation",
   "version": "1.0.0",
-  "description": "VR first aid training simulator"
+  "description": "VR first aid training simulator",
+  "dependencies": {
+    "three": "^0.185.1"
+  }
 }

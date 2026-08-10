@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VR Clinical Simulation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #ffffff;
+      color: #333333;
+      overflow: hidden;
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    .ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      z-index: 100;
+    }
+
+    #menu-overlay {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(245, 245, 245, 0.95);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+
+    .menu-content {
+      text-align: center;
+    }
+
+    .menu-content h1 {
+      font-size: 3em;
+      color: #333333;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .menu-content p {
+      font-size: 1.2em;
+      color: #666666;
+      margin-bottom: 40px;
+      max-width: 600px;
+    }
+
+    #start-training-btn {
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      border: none;
+      padding: 16px 48px;
+      font-size: 1.3em;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    #start-training-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    #scenario-picker-overlay {
+      display: none;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 40px;
+      background: rgba(0, 0, 0, 0.3);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+
+    .scenario-picker-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .scenario-picker-panel h2 {
+      font-size: 1.8em;
+      color: #333333;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .scenario-btn {
+      background: #f5f5f5;
+      border: 2px solid #e0e0e0;
+      padding: 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: left;
+    }
+
+    .scenario-btn:hover {
+      background: #eeeeee;
+      border-color: #4CAF50;
+      transform: translateY(-2px);
+    }
+
+    .scenario-btn h3 {
+      font-size: 1.3em;
+      color: #333333;
+      margin-bottom: 8px;
+    }
+
+    .scenario-btn p {
+      font-size: 0.95em;
+      color: #666666;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .scenario-difficulty {
+      display: inline-block;
+      background: #e0e0e0;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      color: #555555;
+    }
+
+    .picker-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    #scenario-picker-back {
+      background: #e0e0e0;
+      color: #333333;
+      border: none;
+      padding: 12px 32px;
+      font-size: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #loading-screen {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #000000;
+      opacity: 0.95;
+    }
+
+    .loading-content {
+      text-align: center;
+      color: white;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1.2em;
+      color: #cccccc;
+    }
+
+    #vitals-hud {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      font-family: 'Courier New', monospace;
+      z-index: 200;
+      min-width: 250px;
+    }
+
+    #vitals-hud h3 {
+      font-size: 1.2em;
+      color: #333333;
+      margin-bottom: 12px;
+    }
+
+    .vitals-row {
+      padding: 8px;
+      margin: 4px 0;
+      border-radius: 4px;
+      font-size: 1em;
+      font-weight: 600;
+    }
+
+    .vitals-normal {
+      color: #2e7d32;
+      background: rgba(76, 175, 80, 0.1);
+    }
+
+    .vitals-warning {
+      color: #f57c00;
+      background: rgba(255, 152, 0, 0.1);
+    }
+
+    .vitals-critical {
+      color: #c62828;
+      background: rgba(244, 67, 54, 0.1);
+      font-weight: 700;
+      animation: pulse-critical 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse-critical {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    #debrief-overlay {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.5);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      padding: 40px;
+    }
+
+    .debrief-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    #debrief-content {
+      font-size: 1em;
+      line-height: 1.6;
+      color: #333333;
+    }
+
+    .debrief-header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 20px;
+    }
+
+    .debrief-header h1 {
+      font-size: 2em;
+      color: #333333;
+      margin-bottom: 12px;
+    }
+
+    .debrief-score {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .score-number {
+      font-size: 2.5em;
+      font-weight: 700;
+      color: #333333;
+    }
+
+    .score-level {
+      font-size: 1.2em;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .score-level.gold_standard {
+      background: #ffd700;
+      color: #333333;
+    }
+
+    .score-level.pass {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .score-level.borderline {
+      background: #ff9800;
+      color: white;
+    }
+
+    .score-level.fail {
+      background: #f44336;
+      color: white;
+    }
+
+    .debrief-section {
+      margin-bottom: 24px;
+    }
+
+    .debrief-section h2 {
+      font-size: 1.4em;
+      color: #333333;
+      margin-bottom: 12px;
+      border-left: 4px solid #4CAF50;
+      padding-left: 12px;
+    }
+
+    .debrief-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+    }
+
+    #debrief-retry-btn,
+    #debrief-return-btn {
+      padding: 12px 32px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #debrief-retry-btn {
+      background: #4CAF50;
+      color: white;
+    }
+
+    #debrief-return-btn {
+      background: #e0e0e0;
+      color: #333333;
+    }
+
+    @media (max-width: 768px) {
+      .scenario-grid {
+        grid-template-columns: 1fr;
+      }
+      .debrief-panel {
+        max-width: 90vw;
+        padding: 20px;
+      }
+      .menu-content h1 {
+        font-size: 2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="menu-overlay" class="ui-overlay">
+    <div class="menu-content">
+      <h1>🏥 VR Clinical Simulation</h1>
+      <p>Master critical emergency scenarios through immersive first-aid training</p>
+      <button id="start-training-btn">START TRAINING</button>
+    </div>
+  </div>
+
+  <div id="scenario-picker-overlay" class="ui-overlay">
+    <div class="scenario-picker-panel">
+      <h2>Select a Scenario</h2>
+      <div class="scenario-grid">
+        <button class="scenario-btn" id="scenario-cardiac-arrest">
+          <h3>💓 Cardiac Arrest</h3>
+          <p>An adult patient has suffered sudden cardiac arrest. Initiate the Chain of Survival.</p>
+          <span class="scenario-difficulty">Intermediate • 10 min</span>
+        </button>
+        <button class="scenario-btn" id="scenario-femur">
+          <h3>🦵 Fractured Femur</h3>
+          <p>A trauma patient with a suspected femoral shaft fracture. Manage pain and immobilize.</p>
+          <span class="scenario-difficulty">Intermediate • 15 min</span>
+        </button>
+        <button class="scenario-btn" id="scenario-sepsis">
+          <h3>🔴 Sepsis</h3>
+          <p>A patient presenting with sepsis. Recognize and initiate the sepsis bundle rapidly.</p>
+          <span class="scenario-difficulty">Advanced • 15 min</span>
+        </button>
+        <button class="scenario-btn" id="scenario-anaphylaxis">
+          <h3>⚡ Anaphylaxis (Paediatric)</h3>
+          <p>A child experiencing anaphylaxis. Provide immediate IM adrenaline and airway support.</p>
+          <span class="scenario-difficulty">Intermediate • 10 min</span>
+        </button>
+      </div>
+      <div class="picker-buttons">
+        <button id="scenario-picker-back">← BACK TO MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading-screen" class="ui-overlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading scenario...</p>
+    </div>
+  </div>
+
+  <div id="vitals-hud" class="ui-overlay">
+    <h3>VITALS</h3>
+    <div id="vitals-hr" class="vitals-row vitals-normal">HR: -- bpm</div>
+    <div id="vitals-bp" class="vitals-row vitals-normal">BP: --/-- mmHg</div>
+    <div id="vitals-spo2" class="vitals-row vitals-normal">SpO₂: --%</div>
+    <div id="vitals-consciousness" class="vitals-row vitals-normal">Consciousness: --%</div>
+  </div>
+
+  <div id="debrief-overlay" class="ui-overlay">
+    <div class="debrief-panel">
+      <div id="debrief-content"></div>
+      <div class="debrief-buttons">
+        <button id="debrief-retry-btn">🔄 TRY AGAIN</button>
+        <button id="debrief-return-btn">📋 RETURN TO BOARD</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Scene } from './vr/Scene.js';
+    import { InputHandler } from './vr/InputHandler.js';
+    import { UIManager } from './vr/UIManager.js';
+
+    try {
+      const scene = new Scene(document.getElementById('canvas-container'));
+      const inputHandler = new InputHandler(scene, scene.renderer);
+      const uiManager = new UIManager(scene, inputHandler);
+
+      window.scene = scene;
+      window.uiManager = uiManager;
+      window.inputHandler = inputHandler;
+
+      console.log('✅ VR Clinical Simulation initialized successfully');
+    } catch (error) {
+      console.error('❌ Initialization error:', error);
+      console.error('Stack:', error.stack);
+      document.getElementById('menu-overlay').innerHTML = `
+        <div class="menu-content">
+          <h1>⚠️ Error Loading VR Simulation</h1>
+          <p>${error.message}</p>
+          <p style="font-size: 0.9em; color: #999;">Check browser console (F12) for details</p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

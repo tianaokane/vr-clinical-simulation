@@ -2,10 +2,10 @@
 // Runs a cardiac arrest scenario and generates a full debrief report.
 // Shows how DebriefingSystem analyzes performance and provides learning feedback.
 
-import { ScenarioLoader } from "./core/ScenarioLoader.js";
-import { ActionClassifier } from "./core/ActionClassifier.js";
-import { DialogueEngine } from "./core/DialogueEngine.js";
-import { DebriefingSystem } from "./core/DebriefingSystem.js";
+import { ScenarioLoader } from "../core/ScenarioLoader.js";
+import { ActionClassifier } from "../core/ActionClassifier.js";
+import { DialogueEngine } from "../core/DialogueEngine.js";
+import { DebriefingSystem } from "../core/DebriefingSystem.js";
 
 async function runDebriefTest() {
   console.log("=== Cardiac Arrest Scenario + Debriefing ===\n");
