@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0-clinical",
   "scenarioId": "fractured-femur-adult",
-  "scenarioName": "Fractured Femur — Adult",
+  "scenarioName": "Fractured Femur \u2014 Adult",
   "description": "An adult trauma patient arrives in the emergency department after a high-energy fall with a suspected femoral shaft fracture. They are conscious, distressed, and in severe pain with visible thigh deformity and early signs of blood loss. This scenario trains initial ED trauma assessment using ABCDE, monitoring, analgesia escalation, neurovascular limb assessment, safe limb handling, shock recognition, senior/orthopaedic escalation, imaging preparation, and structured handover.",
   "clinicalContext": {
     "setting": "emergency-department-trauma-bay",
@@ -139,328 +139,7 @@
     "repeatedUnsafeLimbHandlingOccurred": false,
     "poorQualityCareFlag": false
   },
-  "metrics": {
-    "timeToSeniorEscalationSeconds": null,
-    "timeToMonitoringSeconds": null,
-    "timeToAnalgesiaSeconds": null,
-    "timeToDistalCSMSeconds": null,
-    "timeToLimbSupportSeconds": null,
-    "timeToShockEscalationSeconds": null,
-    "unsafeActions": 0,
-    "missedActions": 0,
-    "reassuranceCount": 0,
-    "vitalsCheckCount": 0,
-    "painReassessmentCount": 0,
-    "averageActionQuality": 0,
-    "actionQualitySamples": 0,
-    "unsafeLimbHandlingCount": 0,
-    "unsafeClinicalActions": 0
-  },
-  "vitals": {
-    "pulseRate": {
-      "initial": 105,
-      "drift": 0.035,
-      "criticalBelow": 40,
-      "criticalAbove": 140,
-      "min": 40,
-      "max": 180,
-      "unit": "bpm",
-      "label": "Heart rate",
-      "meaning": "Tachycardia can reflect pain, anxiety, blood loss, or shock.",
-      "learnerVisible": true
-    },
-    "bloodPressureSystolic": {
-      "initial": 112,
-      "drift": -0.02,
-      "criticalBelow": 90,
-      "criticalAbove": 180,
-      "min": 50,
-      "max": 220,
-      "unit": "mmHg",
-      "label": "BP systolic",
-      "meaning": "Falling systolic blood pressure suggests developing shock.",
-      "learnerVisible": true
-    },
-    "respiratoryRate": {
-      "initial": 22,
-      "drift": 0.015,
-      "criticalBelow": 8,
-      "criticalAbove": 32,
-      "min": 6,
-      "max": 45,
-      "unit": "breaths/min",
-      "label": "Resp rate",
-      "meaning": "May rise with pain, anxiety, or shock.",
-      "learnerVisible": true
-    },
-    "oxygenSaturation": {
-      "initial": 98,
-      "drift": 0,
-      "criticalBelow": 92,
-      "criticalAbove": null,
-      "min": 70,
-      "max": 100,
-      "unit": "%",
-      "label": "SpO₂",
-      "meaning": "Usually initially normal in isolated femur fracture, but may fall with deterioration or poor perfusion.",
-      "learnerVisible": true
-    },
-    "consciousness": {
-      "initial": 1.0,
-      "drift": 0,
-      "criticalBelow": 0.7,
-      "criticalAbove": null,
-      "min": 0,
-      "max": 1,
-      "unit": "AVPU/GCS proxy",
-      "label": "Consciousness",
-      "meaning": "1 = alert, 0 = unresponsive. Falling consciousness is a danger sign.",
-      "learnerVisible": true
-    },
-    "painScore": {
-      "initial": 8,
-      "drift": 0.005,
-      "criticalBelow": null,
-      "criticalAbove": 9,
-      "min": 0,
-      "max": 10,
-      "unit": "/10",
-      "label": "Pain score",
-      "meaning": "Severe pain should improve slightly with reassurance, stillness, support, and immobilisation.",
-      "learnerVisible": true
-    },
-    "temperature": {
-      "initial": 36.8,
-      "drift": -0.002,
-      "criticalBelow": 35.5,
-      "criticalAbove": 39.5,
-      "min": 32,
-      "max": 42,
-      "unit": "°C",
-      "label": "Temperature",
-      "meaning": "Trauma patients can cool quickly when lying still on the ground.",
-      "learnerVisible": true
-    }
-  },
-  "derivedParameters": {
-    "skinColour": {
-      "sourceParameters": [
-        "bloodPressureSystolic",
-        "shockRisk",
-        "temperature",
-        "consciousness"
-      ],
-      "states": [
-        "normal",
-        "pale",
-        "cool_clammy",
-        "mottled",
-        "flushed"
-      ],
-      "fitzpatrickAware": true,
-      "learnerVisible": true
-    },
-    "distalPerfusionDisplay": {
-      "initial": "weak_pulse_cool_foot_cap_refill_4_seconds",
-      "unit": "",
-      "label": "Distal CSM",
-      "learnerVisible": true,
-      "meaning": "Learner-visible summary after checking foot pulse, capillary refill, sensation, and toe movement."
-    },
-    "painBehaviour": {
-      "initial": "guarding_distressed",
-      "unit": "",
-      "label": "Pain behaviour",
-      "learnerVisible": true,
-      "possibleValues": [
-        "guarding_distressed",
-        "calmer_but_painful",
-        "severe_distress",
-        "drowsy_unwell"
-      ]
-    }
-  },
-  "monitorOutputs": {
-    "manualVitals": {
-      "requires": [
-        "vitalsMonitoringStarted"
-      ],
-      "rules": [
-        {
-          "targetParameter": "pulseRate",
-          "display": "numeric_pulseRate"
-        },
-        {
-          "targetParameter": "bloodPressureSystolic",
-          "display": "numeric_bloodPressureSystolic"
-        },
-        {
-          "targetParameter": "respiratoryRate",
-          "display": "numeric_respiratoryRate"
-        },
-        {
-          "targetParameter": "oxygenSaturation",
-          "display": "numeric_oxygenSaturation"
-        }
-      ]
-    },
-    "distalCSM": {
-      "requiresAny": [
-        "distalPulseChecked",
-        "capillaryRefillChecked",
-        "distalSensationChecked",
-        "distalMovementChecked"
-      ],
-      "rules": [
-        {
-          "targetParameter": "distalPerfusionDisplay",
-          "when": {
-            "distalPulseStrength": {
-              "above": 0.5
-            }
-          },
-          "display": "weak_pulse_cool_foot_cap_refill_4_seconds"
-        },
-        {
-          "targetParameter": "distalPerfusionDisplay",
-          "when": {
-            "distalPulseStrength": {
-              "below": 0.3
-            }
-          },
-          "display": "very_weak_pulse_cold_foot_delayed_cap_refill"
-        }
-      ]
-    }
-  },
-  "couplings": [
-    {
-      "id": "untreated_internal_bleeding_progression",
-      "if": "shockRisk",
-      "above": 0.3,
-      "onlyWhen": {
-        "limbSupported": false
-      },
-      "effects": {
-        "pulseRate": 0.06,
-        "bloodPressureSystolic": -0.04,
-        "respiratoryRate": 0.025,
-        "painScore": 0.01
-      },
-      "hiddenStateEffects": {
-        "bloodLossVolume": 4.0,
-        "timeWithoutLimbSupport": 1,
-        "shockRisk": 0.003
-      },
-      "reason": "A painful unsupported femur fracture can worsen bleeding and shock risk."
-    },
-    {
-      "id": "delayed_help_increases_risk",
-      "if": "timeWithoutHelp",
-      "above": 60,
-      "onlyWhen": {
-        "helpCalled": false
-      },
-      "effects": {
-        "pulseRate": 0.04,
-        "bloodPressureSystolic": -0.03
-      },
-      "hiddenStateEffects": {
-        "timeWithoutHelp": 1,
-        "shockRisk": 0.002,
-        "bloodLossVolume": 2.0
-      },
-      "reason": "Delaying emergency help increases the risk of deterioration before definitive care."
-    },
-    {
-      "id": "developing_shock",
-      "if": "bloodLossVolume",
-      "above": 1000,
-      "effects": {
-        "pulseRate": 0.08,
-        "bloodPressureSystolic": -0.07,
-        "respiratoryRate": 0.03,
-        "consciousness": -0.0015,
-        "temperature": -0.001
-      },
-      "hiddenStateEffects": {
-        "shockRisk": 0.004
-      },
-      "reason": "Blood loss and shock cause tachycardia, falling blood pressure, faster breathing, cooling, and reduced alertness."
-    },
-    {
-      "id": "limb_support_slows_deterioration",
-      "if": "limbSupported",
-      "equals": true,
-      "effects": {
-        "painScore": -0.012,
-        "pulseRate": -0.015
-      },
-      "hiddenStateEffects": {
-        "bleedingRate": -0.03,
-        "shockRisk": -0.001
-      },
-      "reason": "Supporting the limb in the position found reduces pain and limits further movement."
-    },
-    {
-      "id": "immobilisation_stabilises",
-      "if": "limbImmobilised",
-      "equals": true,
-      "effects": {
-        "painScore": -0.006,
-        "bloodPressureSystolic": 0.015
-      },
-      "hiddenStateEffects": {
-        "bleedingRate": -0.04,
-        "shockRisk": -0.0015
-      },
-      "reason": "Padding and immobilisation reduce movement, pain, and ongoing deterioration."
-    },
-    {
-      "id": "shock_care_slows_cooling",
-      "if": "patientKeptWarm",
-      "equals": true,
-      "effects": {
-        "temperature": 0.002,
-        "consciousness": 0.0005
-      },
-      "hiddenStateEffects": {
-        "shockRisk": -0.0008
-      },
-      "reason": "Keeping the patient warm supports trauma shock care."
-    },
-    {
-      "id": "repeated_unsafe_limb_handling_worsens_shock",
-      "if": "unsafeLimbHandlingCount",
-      "above": 1,
-      "effects": {
-        "pulseRate": 0.05,
-        "bloodPressureSystolic": -0.035,
-        "respiratoryRate": 0.025,
-        "painScore": 0.015
-      },
-      "hiddenStateEffects": {
-        "bloodLossVolume": 3.0,
-        "shockRisk": 0.004
-      },
-      "reason": "Repeated unsafe handling of a suspected femur fracture increases pain, bleeding risk, and shock progression."
-    },
-    {
-      "id": "distal_perfusion_compromise",
-      "if": "distalPulseStrength",
-      "below": 0.35,
-      "effects": {
-        "painScore": 0.01,
-        "pulseRate": 0.02
-      },
-      "hiddenStateEffects": {
-        "capillaryRefillTime": 0.02,
-        "shockRisk": 0.001
-      },
-      "reason": "Worsening distal perfusion is a concerning limb finding and should be reassessed/escalated."
-    }
-  ],
-  "actionMappings": {
+  "actions": {
     "confirmIdentityAndIntroduceSelf": {
       "label": "Confirm Identity / Introduce Self",
       "group": "Initial approach",
@@ -501,7 +180,7 @@
       }
     },
     "assessAirwayCSpine": {
-      "label": "A — Assess Airway / Consider C-Spine",
+      "label": "A \u2014 Assess Airway / Consider C-Spine",
       "group": "ABCDE",
       "instruction": "Check speech/airway and consider C-spine precautions for the mechanism.",
       "sequence": 3,
@@ -518,7 +197,7 @@
       }
     },
     "assessBreathing": {
-      "label": "B — Assess Breathing",
+      "label": "B \u2014 Assess Breathing",
       "group": "ABCDE",
       "instruction": "Assess RR, work of breathing, chest signs, and SpO2.",
       "sequence": 4,
@@ -553,7 +232,7 @@
       "learnerFeedback": "Monitoring allows trend recognition."
     },
     "assessCirculationBleeding": {
-      "label": "C — Assess Circulation / Bleeding",
+      "label": "C \u2014 Assess Circulation / Bleeding",
       "group": "ABCDE",
       "instruction": "Assess pulse, BP, capillary refill, skin signs, major external bleeding, and shock risk.",
       "sequence": 6,
@@ -603,7 +282,7 @@
       }
     },
     "assessDisabilityPain": {
-      "label": "D — Assess Disability / Pain",
+      "label": "D \u2014 Assess Disability / Pain",
       "group": "ABCDE",
       "instruction": "Assess AVPU/GCS, pain score, nausea, and neurological symptoms.",
       "sequence": 9,
@@ -660,7 +339,7 @@
       "learnerFeedback": "Analgesia reduces distress but does not fix the fracture."
     },
     "exposeAndInspectInjury": {
-      "label": "E — Expose and Inspect Injury",
+      "label": "E \u2014 Expose and Inspect Injury",
       "group": "ABCDE",
       "instruction": "Expose enough to inspect while maintaining dignity and preventing hypothermia. Do not lift or straighten the limb.",
       "sequence": 12,
@@ -965,7 +644,7 @@
       "instruction": "Unsafe test action: do not ask the patient to weight-bear on a suspected femur fracture.",
       "dangerousTestAction": true,
       "sequence": 92,
-      "patientDialogue": "I can't stand — my leg feels wrong!",
+      "patientDialogue": "I can't stand \u2014 my leg feels wrong!",
       "setsState": {
         "askedToStand": true,
         "unsafeMovementOccurred": true,
@@ -992,7 +671,7 @@
       "instruction": "Unsafe test action: do not apply tight circumferential pressure over a closed deformed thigh without a clear external bleed.",
       "dangerousTestAction": true,
       "sequence": 93,
-      "patientDialogue": "That's too tight — my foot feels colder!",
+      "patientDialogue": "That's too tight \u2014 my foot feels colder!",
       "setsState": {
         "tightBandageApplied": true,
         "repeatedUnsafeLimbHandlingOccurred": false
@@ -1033,6 +712,327 @@
       }
     }
   },
+  "metrics": {
+    "timeToSeniorEscalationSeconds": null,
+    "timeToMonitoringSeconds": null,
+    "timeToAnalgesiaSeconds": null,
+    "timeToDistalCSMSeconds": null,
+    "timeToLimbSupportSeconds": null,
+    "timeToShockEscalationSeconds": null,
+    "unsafeActions": 0,
+    "missedActions": 0,
+    "reassuranceCount": 0,
+    "vitalsCheckCount": 0,
+    "painReassessmentCount": 0,
+    "averageActionQuality": 0,
+    "actionQualitySamples": 0,
+    "unsafeLimbHandlingCount": 0,
+    "unsafeClinicalActions": 0
+  },
+  "vitals": {
+    "pulseRate": {
+      "initial": 105,
+      "drift": 0.035,
+      "criticalBelow": 40,
+      "criticalAbove": 140,
+      "min": 40,
+      "max": 180,
+      "unit": "bpm",
+      "label": "Heart rate",
+      "meaning": "Tachycardia can reflect pain, anxiety, blood loss, or shock.",
+      "learnerVisible": true
+    },
+    "bloodPressureSystolic": {
+      "initial": 112,
+      "drift": -0.02,
+      "criticalBelow": 90,
+      "criticalAbove": 180,
+      "min": 50,
+      "max": 220,
+      "unit": "mmHg",
+      "label": "BP systolic",
+      "meaning": "Falling systolic blood pressure suggests developing shock.",
+      "learnerVisible": true
+    },
+    "respiratoryRate": {
+      "initial": 22,
+      "drift": 0.015,
+      "criticalBelow": 8,
+      "criticalAbove": 32,
+      "min": 6,
+      "max": 45,
+      "unit": "breaths/min",
+      "label": "Resp rate",
+      "meaning": "May rise with pain, anxiety, or shock.",
+      "learnerVisible": true
+    },
+    "oxygenSaturation": {
+      "initial": 98,
+      "drift": 0,
+      "criticalBelow": 92,
+      "criticalAbove": null,
+      "min": 70,
+      "max": 100,
+      "unit": "%",
+      "label": "SpO\u2082",
+      "meaning": "Usually initially normal in isolated femur fracture, but may fall with deterioration or poor perfusion.",
+      "learnerVisible": true
+    },
+    "consciousness": {
+      "initial": 1.0,
+      "drift": 0,
+      "criticalBelow": 0.7,
+      "criticalAbove": null,
+      "min": 0,
+      "max": 1,
+      "unit": "AVPU/GCS proxy",
+      "label": "Consciousness",
+      "meaning": "1 = alert, 0 = unresponsive. Falling consciousness is a danger sign.",
+      "learnerVisible": true
+    },
+    "painScore": {
+      "initial": 8,
+      "drift": 0.005,
+      "criticalBelow": null,
+      "criticalAbove": 9,
+      "min": 0,
+      "max": 10,
+      "unit": "/10",
+      "label": "Pain score",
+      "meaning": "Severe pain should improve slightly with reassurance, stillness, support, and immobilisation.",
+      "learnerVisible": true
+    },
+    "temperature": {
+      "initial": 36.8,
+      "drift": -0.002,
+      "criticalBelow": 35.5,
+      "criticalAbove": 39.5,
+      "min": 32,
+      "max": 42,
+      "unit": "\u00b0C",
+      "label": "Temperature",
+      "meaning": "Trauma patients can cool quickly when lying still on the ground.",
+      "learnerVisible": true
+    }
+  },
+  "derivedParameters": {
+    "skinColour": {
+      "sourceParameters": [
+        "bloodPressureSystolic",
+        "shockRisk",
+        "temperature",
+        "consciousness"
+      ],
+      "states": [
+        "normal",
+        "pale",
+        "cool_clammy",
+        "mottled",
+        "flushed"
+      ],
+      "fitzpatrickAware": true,
+      "learnerVisible": true
+    },
+    "distalPerfusionDisplay": {
+      "initial": "weak_pulse_cool_foot_cap_refill_4_seconds",
+      "unit": "",
+      "label": "Distal CSM",
+      "learnerVisible": true,
+      "meaning": "Learner-visible summary after checking foot pulse, capillary refill, sensation, and toe movement."
+    },
+    "painBehaviour": {
+      "initial": "guarding_distressed",
+      "unit": "",
+      "label": "Pain behaviour",
+      "learnerVisible": true,
+      "possibleValues": [
+        "guarding_distressed",
+        "calmer_but_painful",
+        "severe_distress",
+        "drowsy_unwell"
+      ]
+    }
+  },
+  "monitorOutputs": {
+    "manualVitals": {
+      "requires": [
+        "vitalsMonitoringStarted"
+      ],
+      "rules": [
+        {
+          "targetParameter": "pulseRate",
+          "display": "numeric_pulseRate"
+        },
+        {
+          "targetParameter": "bloodPressureSystolic",
+          "display": "numeric_bloodPressureSystolic"
+        },
+        {
+          "targetParameter": "respiratoryRate",
+          "display": "numeric_respiratoryRate"
+        },
+        {
+          "targetParameter": "oxygenSaturation",
+          "display": "numeric_oxygenSaturation"
+        }
+      ]
+    },
+    "distalCSM": {
+      "requiresAny": [
+        "distalPulseChecked",
+        "capillaryRefillChecked",
+        "distalSensationChecked",
+        "distalMovementChecked"
+      ],
+      "rules": [
+        {
+          "targetParameter": "distalPerfusionDisplay",
+          "when": {
+            "distalPulseStrength": {
+              "above": 0.5
+            }
+          },
+          "display": "weak_pulse_cool_foot_cap_refill_4_seconds"
+        },
+        {
+          "targetParameter": "distalPerfusionDisplay",
+          "when": {
+            "distalPulseStrength": {
+              "below": 0.3
+            }
+          },
+          "display": "very_weak_pulse_cold_foot_delayed_cap_refill"
+        }
+      ]
+    }
+  },
+  "couplings": [
+    {
+      "id": "untreated_internal_bleeding_progression",
+      "if": "shockRisk",
+      "above": 0.3,
+      "onlyWhen": {
+        "limbSupported": false
+      },
+      "effects": {
+        "pulseRate": 0.06,
+        "bloodPressureSystolic": -0.04,
+        "respiratoryRate": 0.025,
+        "painScore": 0.01
+      },
+      "hiddenStateEffects": {
+        "bloodLossVolume": 4.0,
+        "timeWithoutLimbSupport": 1,
+        "shockRisk": 0.003
+      },
+      "reason": "A painful unsupported femur fracture can worsen bleeding and shock risk."
+    },
+    {
+      "id": "delayed_help_increases_risk",
+      "if": "timeWithoutHelp",
+      "above": 60,
+      "onlyWhen": {
+        "helpCalled": false
+      },
+      "effects": {
+        "pulseRate": 0.04,
+        "bloodPressureSystolic": -0.03
+      },
+      "hiddenStateEffects": {
+        "timeWithoutHelp": 1,
+        "shockRisk": 0.002,
+        "bloodLossVolume": 2.0
+      },
+      "reason": "Delaying emergency help increases the risk of deterioration before definitive care."
+    },
+    {
+      "id": "developing_shock",
+      "if": "bloodLossVolume",
+      "above": 1000,
+      "effects": {
+        "pulseRate": 0.08,
+        "bloodPressureSystolic": -0.07,
+        "respiratoryRate": 0.03,
+        "consciousness": -0.0015,
+        "temperature": -0.001
+      },
+      "hiddenStateEffects": {
+        "shockRisk": 0.004
+      },
+      "reason": "Blood loss and shock cause tachycardia, falling blood pressure, faster breathing, cooling, and reduced alertness."
+    },
+    {
+      "id": "limb_support_slows_deterioration",
+      "if": "limbSupported",
+      "equals": true,
+      "effects": {
+        "painScore": -0.012,
+        "pulseRate": -0.015
+      },
+      "hiddenStateEffects": {
+        "bleedingRate": -0.03,
+        "shockRisk": -0.001
+      },
+      "reason": "Supporting the limb in the position found reduces pain and limits further movement."
+    },
+    {
+      "id": "immobilisation_stabilises",
+      "if": "limbImmobilised",
+      "equals": true,
+      "effects": {
+        "painScore": -0.006,
+        "bloodPressureSystolic": 0.015
+      },
+      "hiddenStateEffects": {
+        "bleedingRate": -0.04,
+        "shockRisk": -0.0015
+      },
+      "reason": "Padding and immobilisation reduce movement, pain, and ongoing deterioration."
+    },
+    {
+      "id": "shock_care_slows_cooling",
+      "if": "patientKeptWarm",
+      "equals": true,
+      "effects": {
+        "temperature": 0.002,
+        "consciousness": 0.0005
+      },
+      "hiddenStateEffects": {
+        "shockRisk": -0.0008
+      },
+      "reason": "Keeping the patient warm supports trauma shock care."
+    },
+    {
+      "id": "repeated_unsafe_limb_handling_worsens_shock",
+      "if": "unsafeLimbHandlingCount",
+      "above": 1,
+      "effects": {
+        "pulseRate": 0.05,
+        "bloodPressureSystolic": -0.035,
+        "respiratoryRate": 0.025,
+        "painScore": 0.015
+      },
+      "hiddenStateEffects": {
+        "bloodLossVolume": 3.0,
+        "shockRisk": 0.004
+      },
+      "reason": "Repeated unsafe handling of a suspected femur fracture increases pain, bleeding risk, and shock progression."
+    },
+    {
+      "id": "distal_perfusion_compromise",
+      "if": "distalPulseStrength",
+      "below": 0.35,
+      "effects": {
+        "painScore": 0.01,
+        "pulseRate": 0.02
+      },
+      "hiddenStateEffects": {
+        "capillaryRefillTime": 0.02,
+        "shockRisk": 0.001
+      },
+      "reason": "Worsening distal perfusion is a concerning limb finding and should be reassessed/escalated."
+    }
+  ],
   "requiredActions": [
     "confirmIdentityAndIntroduceSelf",
     "startABCDE",

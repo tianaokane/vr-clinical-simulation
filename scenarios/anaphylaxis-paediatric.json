@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0-clinical",
   "scenarioId": "anaphylaxis-paediatric",
-  "scenarioName": "Anaphylaxis — Paediatric",
+  "scenarioName": "Anaphylaxis \u2014 Paediatric",
   "description": "A paediatric patient arrives in the emergency department with suspected anaphylaxis after accidental peanut exposure. They are frightened, wheezy, flushed, itchy, and developing airway/breathing/circulation compromise. This scenario trains rapid recognition of anaphylaxis, paediatric ABCDE assessment, early intramuscular adrenaline, oxygen, monitoring, escalation, repeat adrenaline decision-making, shock management, reassessment, observation planning, and structured handover.",
   "clinicalContext": {
     "setting": "emergency-department-paediatric-resus-bay",
@@ -144,6 +144,669 @@
     "symptomImprovementConfirmed": false,
     "airwayBreathingImproved": false
   },
+  "actions": {
+    "confirmIdentityEngageParent": {
+      "label": "Confirm Identity / Engage Parent",
+      "group": "Initial approach",
+      "instruction": "Introduce yourself, confirm child identity if possible, and involve the parent/guardian while prioritising ABC problems.",
+      "sequence": 1,
+      "completionOnly": true,
+      "setsState": {
+        "patientIdentityConfirmed": true,
+        "parentOrGuardianEngaged": true,
+        "reassuranceGiven": true
+      },
+      "metrics": {
+        "increment": "reassuranceCount",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "effects": {
+        "pulseRate": -1,
+        "respiratoryRate": -0.5
+      },
+      "clinicalFinding": "Maya is alert but frightened. Parent confirms known peanut allergy.",
+      "patientDialogue": "I'm scared. My throat feels funny.",
+      "learnerFeedback": "Good communication helps paediatric cooperation, but ABC compromise must still be treated rapidly."
+    },
+    "startABCDE": {
+      "label": "Start Paediatric ABCDE",
+      "group": "ABCDE",
+      "instruction": "Start structured paediatric ABCDE assessment and treat life-threatening problems as they are found.",
+      "sequence": 2,
+      "setsState": {
+        "primarySurveyStarted": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Child has airway symptoms, wheeze, rash, tachycardia, and borderline blood pressure after likely allergen exposure.",
+      "learnerFeedback": "ABCDE prevents missing airway, breathing, or circulation compromise."
+    },
+    "assessAirway": {
+      "label": "A \u2014 Assess Airway",
+      "group": "ABCDE",
+      "instruction": "Assess voice, airway patency, lip/tongue swelling, stridor, and ability to speak/cry.",
+      "sequence": 3,
+      "setsState": {
+        "airwayAssessed": true,
+        "airwayPatent": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Hoarse voice with mild lip swelling. No stridor yet. Airway is patent but at risk.",
+      "patientDialogue": "My mouth feels puffy."
+    },
+    "assessBreathing": {
+      "label": "B \u2014 Assess Breathing",
+      "group": "ABCDE",
+      "instruction": "Assess respiratory rate, work of breathing, wheeze, chest movement, and SpO2.",
+      "sequence": 4,
+      "setsState": {
+        "breathingAssessed": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "RR 32, SpO2 93%, widespread wheeze, increased work of breathing.",
+      "learnerFeedback": "Breathing compromise after allergen exposure supports anaphylaxis."
+    },
+    "assessCirculation": {
+      "label": "C \u2014 Assess Circulation",
+      "group": "ABCDE",
+      "instruction": "Assess heart rate, blood pressure, capillary refill, skin signs, perfusion, and shock.",
+      "sequence": 5,
+      "setsState": {
+        "circulationAssessed": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "HR 132, BP 92 systolic, capillary refill 4 seconds, anxious/flushed with early poor perfusion.",
+      "learnerFeedback": "Children may compensate until late; borderline BP and poor perfusion are concerning."
+    },
+    "recogniseAnaphylaxis": {
+      "label": "Recognise Anaphylaxis",
+      "group": "Diagnosis / recognition",
+      "instruction": "Recognise likely anaphylaxis: allergen exposure plus airway/breathing/circulation features, with rash/mucosal swelling.",
+      "sequence": 6,
+      "requiresAnyState": {
+        "airwayAssessed": true,
+        "breathingAssessed": true,
+        "circulationAssessed": true
+      },
+      "setsState": {
+        "anaphylaxisRecognised": true
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToRecognitionSeconds",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Likely anaphylaxis: peanut exposure, airway symptoms, wheeze, rash, and circulatory compromise.",
+      "learnerFeedback": "Recognition should trigger immediate IM adrenaline and senior help."
+    },
+    "callPaediatricSeniorHelp": {
+      "label": "Call Senior / Paediatric Resus Help",
+      "group": "Escalation",
+      "instruction": "Call senior ED/paediatric/resus help. State suspected paediatric anaphylaxis with airway/breathing/circulation compromise.",
+      "sequence": 7,
+      "completionOnly": true,
+      "setsState": {
+        "seniorHelpCalled": true,
+        "paediatricTeamCalled": true,
+        "resusTeamCalled": true
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToSeniorEscalationSeconds",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Senior paediatric/resus help requested.",
+      "learnerFeedback": "Anaphylaxis can deteriorate quickly; early help is essential."
+    },
+    "attachMonitoring": {
+      "label": "Attach Monitoring",
+      "group": "Monitoring",
+      "instruction": "Attach pulse oximeter, BP cuff, and ECG monitoring. Start repeated paediatric observations.",
+      "sequence": 8,
+      "setsState": {
+        "monitoringAttached": true,
+        "pulseOxProbeAttached": true,
+        "bpCuffAttached": true,
+        "ecgMonitoringAttached": true,
+        "vitalsMonitoringStarted": true
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToMonitoringSeconds",
+        "increment": "reassessmentCount",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Monitor shows HR 132, BP 92 systolic, RR 32, SpO2 93%.",
+      "learnerFeedback": "Monitoring supports trend recognition and safe medication reassessment."
+    },
+    "giveHighFlowOxygen": {
+      "label": "Give High-Flow Oxygen",
+      "group": "Breathing",
+      "instruction": "Apply high-flow oxygen via appropriate paediatric mask if tolerated. Do not delay adrenaline.",
+      "sequence": 9,
+      "setsState": {
+        "oxygenApplied": true
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToOxygenSeconds",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "effects": {
+        "oxygenSaturation": 3.0,
+        "respiratoryRate": -1.0
+      },
+      "clinicalFinding": "Oxygen applied. SpO2 begins to improve if airway/breathing compromise is also treated.",
+      "patientDialogue": "The mask feels funny.",
+      "learnerFeedback": "Oxygen is supportive but does not replace IM adrenaline."
+    },
+    "giveIMAdrenaline": {
+      "label": "Give IM Adrenaline",
+      "group": "Adrenaline",
+      "instruction": "Give age/weight-appropriate IM adrenaline into the anterolateral thigh according to local policy. Do not delay for antihistamines or steroids.",
+      "sequence": 10,
+      "requiresState": {
+        "anaphylaxisRecognised": true
+      },
+      "setsState": {
+        "imAdrenalineGiven": true,
+        "timeSinceFirstAdrenalineSeconds": 0
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToFirstIMAdrenalineSeconds",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "effects": {
+        "bloodPressureSystolic": 8,
+        "oxygenSaturation": 2.0,
+        "workOfBreathing": -0.12,
+        "wheezeSeverity": -0.12,
+        "airwaySwelling": -0.08,
+        "pulseRate": 5
+      },
+      "hiddenStateEffects": {
+        "reactionBurden": -0.18,
+        "airwayOedema": -0.12,
+        "bronchospasm": -0.14,
+        "vasodilation": -0.16,
+        "capillaryLeak": -0.1,
+        "shockRisk": -0.12
+      },
+      "clinicalFinding": "IM adrenaline given. Airway/breathing/circulation should be reassessed within minutes.",
+      "patientDialogue": "That hurt... but I can breathe a tiny bit better.",
+      "learnerFeedback": "IM adrenaline is the key first-line treatment for anaphylaxis."
+    },
+    "positionSafely": {
+      "label": "Position Safely",
+      "group": "Supportive care",
+      "instruction": "Keep the child safe and still. Use supported sitting for severe breathing distress or lying flat if shocked, according to clinical state. Do not make them stand or walk.",
+      "sequence": 11,
+      "setsState": {
+        "positionedSafely": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "effects": {
+        "respiratoryRate": -0.5,
+        "pulseRate": -1
+      },
+      "clinicalFinding": "Child is kept safely positioned with parent nearby and staff supporting airway/breathing monitoring.",
+      "learnerFeedback": "Standing or walking can worsen collapse risk in anaphylaxis."
+    },
+    "establishIVAccess": {
+      "label": "Establish IV/IO Access",
+      "group": "Circulation / escalation",
+      "instruction": "Establish IV access, or request IO/senior help if access is difficult and the child is shocked.",
+      "sequence": 12,
+      "requiresState": {
+        "seniorHelpCalled": true
+      },
+      "setsState": {
+        "ivAccessEstablished": true
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToIVAccessSeconds",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "IV access established/prepared for fluids and emergency medication as directed.",
+      "learnerFeedback": "IV access supports shock management but should not delay IM adrenaline."
+    },
+    "prepareFluidBolus": {
+      "label": "Prepare Fluid Bolus if Shocked",
+      "group": "Circulation / escalation",
+      "instruction": "Prepare glucose-free crystalloid fluid bolus according to paediatric policy if shock/poor perfusion persists.",
+      "sequence": 13,
+      "requiresState": {
+        "ivAccessEstablished": true,
+        "monitoringAttached": true
+      },
+      "setsState": {
+        "fluidBolusPrepared": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Fluid bolus prepared for persistent poor perfusion/shock.",
+      "learnerFeedback": "Fluids are an adjunct for anaphylactic shock; adrenaline remains first-line."
+    },
+    "giveFluidBolus": {
+      "label": "Give Fluid Bolus if Indicated",
+      "group": "Circulation / escalation",
+      "instruction": "Give fluid bolus according to paediatric policy if hypotension or poor perfusion persists after adrenaline.",
+      "sequence": 14,
+      "requiresState": {
+        "fluidBolusPrepared": true,
+        "imAdrenalineGiven": true
+      },
+      "setsState": {
+        "fluidBolusGiven": true
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToFluidBolusSeconds",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "effects": {
+        "bloodPressureSystolic": 5,
+        "pulseRate": -3,
+        "consciousness": 0.01
+      },
+      "hiddenStateEffects": {
+        "shockRisk": -0.08
+      },
+      "clinicalFinding": "Perfusion improves slightly after fluid bolus if shock is present.",
+      "learnerFeedback": "Fluid bolus supports circulation in shock but does not replace adrenaline."
+    },
+    "assessDisability": {
+      "label": "D \u2014 Assess Disability",
+      "group": "ABCDE",
+      "instruction": "Assess AVPU/GCS, glucose if indicated, agitation, drowsiness, and signs of exhaustion.",
+      "sequence": 15,
+      "setsState": {
+        "disabilityAssessed": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Child is alert but scared. No seizure. No drowsiness yet.",
+      "learnerFeedback": "Drowsiness would be a serious sign of hypoxia/shock/exhaustion."
+    },
+    "exposeAssessRashTrigger": {
+      "label": "E \u2014 Expose / Rash / Trigger History",
+      "group": "ABCDE",
+      "instruction": "Expose appropriately to assess rash/angioedema while maintaining warmth and dignity. Ask parent about trigger, timing, asthma, and previous reactions.",
+      "sequence": 16,
+      "setsState": {
+        "exposureCompleted": true,
+        "rashRecognised": true,
+        "triggerHistoryTaken": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Widespread urticaria, itchy skin, lip swelling. Parent reports peanut allergy and possible exposure 15 minutes ago.",
+      "parentDialogue": "She had a reaction once before, but this is worse."
+    },
+    "reassessAfterAdrenaline": {
+      "label": "Reassess ABC After Adrenaline",
+      "group": "Reassessment",
+      "instruction": "Reassess airway, breathing, circulation, SpO2, BP, consciousness, rash, and symptom trend after IM adrenaline.",
+      "sequence": 17,
+      "requiresState": {
+        "imAdrenalineGiven": true,
+        "monitoringAttached": true
+      },
+      "setsState": {
+        "reassessmentAfterAdrenaline": true,
+        "symptomsImproving": true,
+        "symptomImprovementConfirmed": true,
+        "airwayBreathingImproved": true,
+        "abcProblemsPersist": false
+      },
+      "metrics": {
+        "increment": "reassessmentCount",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "conditionalOutcome": {
+        "successCondition": {
+          "oxygenSaturation": {
+            "above": 94
+          },
+          "bloodPressureSystolic": {
+            "above": 90
+          },
+          "consciousness": {
+            "above": 0.9
+          },
+          "workOfBreathing": {
+            "below": 0.65
+          },
+          "airwaySwelling": {
+            "below": 0.5
+          }
+        },
+        "onSuccess": {
+          "setsState": {
+            "abcProblemsPersist": false,
+            "symptomsImproving": true,
+            "symptomImprovementConfirmed": true,
+            "airwayBreathingImproved": true
+          },
+          "message": "ABC features improving after IM adrenaline. Continue observation and aftercare planning."
+        },
+        "onFailure": {
+          "setsState": {
+            "abcProblemsPersist": true,
+            "symptomsImproving": false
+          },
+          "message": "ABC problems persist. Prepare repeat IM adrenaline and escalate further."
+        }
+      },
+      "effects": {
+        "respiratoryRate": -2.5,
+        "pulseRate": -4,
+        "workOfBreathing": -0.08,
+        "wheezeSeverity": -0.06,
+        "airwaySwelling": -0.04
+      },
+      "hiddenStateEffects": {
+        "reactionBurden": -0.04,
+        "bronchospasm": -0.04,
+        "airwayOedema": -0.03,
+        "shockRisk": -0.03
+      },
+      "clinicalFinding": "ABC features are improving after IM adrenaline: oxygenation is stable, airway swelling and wheeze are reducing, perfusion is safer, and the child is settling. Continue monitoring and plan observation/aftercare.",
+      "patientDialogue": "I can breathe a bit better now.",
+      "learnerFeedback": "ABC features are improving. Continue monitoring and plan observation/aftercare. Repeat IM adrenaline only if ABC problems persist."
+    },
+    "giveSecondIMAdrenalineIfNeeded": {
+      "label": "Give Second IM Adrenaline if ABC Problems Persist",
+      "group": "Adrenaline",
+      "instruction": "If ABC problems persist after approximately 5 minutes, give a second age/weight-appropriate IM adrenaline dose according to local policy/senior direction.",
+      "sequence": 18,
+      "requiresState": {
+        "imAdrenalineGiven": true,
+        "reassessmentAfterAdrenaline": true,
+        "abcProblemsPersist": true
+      },
+      "setsState": {
+        "secondIMAdrenalineGiven": true
+      },
+      "metrics": {
+        "recordFirstTimeAs": "timeToSecondIMAdrenalineSeconds",
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "effects": {
+        "bloodPressureSystolic": 7,
+        "oxygenSaturation": 2.0,
+        "workOfBreathing": -0.12,
+        "wheezeSeverity": -0.12,
+        "airwaySwelling": -0.08,
+        "pulseRate": 4
+      },
+      "hiddenStateEffects": {
+        "reactionBurden": -0.16,
+        "airwayOedema": -0.1,
+        "bronchospasm": -0.12,
+        "vasodilation": -0.12,
+        "capillaryLeak": -0.08,
+        "shockRisk": -0.1
+      },
+      "clinicalFinding": "Second IM adrenaline given because ABC symptoms persisted.",
+      "patientDialogue": "I still feel wheezy, but it's not as scary now.",
+      "learnerFeedback": "Persistent ABC problems after the first dose require prompt reassessment and repeat treatment."
+    },
+    "giveBronchodilatorForWheeze": {
+      "label": "Give Bronchodilator for Persistent Wheeze",
+      "group": "Breathing",
+      "instruction": "Give inhaled bronchodilator for ongoing bronchospasm after IM adrenaline. Do not use it as a substitute for adrenaline.",
+      "sequence": 19,
+      "requiresState": {
+        "imAdrenalineGiven": true
+      },
+      "setsState": {
+        "bronchodilatorGiven": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "effects": {
+        "wheezeSeverity": -0.12,
+        "workOfBreathing": -0.06,
+        "oxygenSaturation": 1.0
+      },
+      "clinicalFinding": "Wheeze improves slightly after bronchodilator.",
+      "learnerFeedback": "Bronchodilator is supportive after adrenaline when wheeze persists."
+    },
+    "considerAntihistamineSteroidAfterAdrenaline": {
+      "label": "Consider Antihistamine/Steroid After Stabilisation",
+      "group": "Adjuncts",
+      "instruction": "Consider antihistamine/steroid only after first-line treatment and stabilisation, according to local policy. Do not delay adrenaline.",
+      "sequence": 20,
+      "requiresState": {
+        "imAdrenalineGiven": true
+      },
+      "setsState": {
+        "antihistamineGiven": true,
+        "steroidGiven": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Adjunct medication considered/given after adrenaline and ABC stabilisation.",
+      "learnerFeedback": "Adjuncts may help symptoms/ongoing care but are not first-line lifesaving treatment."
+    },
+    "planObservationAndAftercare": {
+      "label": "Plan Observation and Aftercare",
+      "group": "Aftercare",
+      "instruction": "Plan appropriate observation for recurrence/biphasic reaction and prepare allergy referral, auto-injector education, and discharge safety advice.",
+      "sequence": 21,
+      "requiresState": {
+        "symptomsImproving": true,
+        "reassessmentAfterAdrenaline": true
+      },
+      "setsState": {
+        "observationPlanMade": true,
+        "allergyReferralPlanned": true,
+        "autoInjectorEducationPlanned": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Observation and aftercare plan prepared: monitor for biphasic reaction, allergy referral, two auto-injectors, education, written action plan.",
+      "learnerFeedback": "Safe aftercare matters even after acute symptoms improve."
+    },
+    "prepareClinicalHandover": {
+      "label": "Prepare SBAR / ATMIST Handover",
+      "group": "Handover",
+      "instruction": "Prepare handover including age/weight, trigger, timing, ABC findings, adrenaline timing, response, ongoing concerns, and aftercare plan.",
+      "sequence": 22,
+      "completionOnly": true,
+      "setsState": {
+        "handoverPrepared": true
+      },
+      "metrics": {
+        "updateAverageQualityAs": "averageActionQuality",
+        "averageCountAs": "actionQualitySamples"
+      },
+      "clinicalFinding": "Handover ready: 9-year-old, 30 kg, peanut exposure, airway symptoms, wheeze, rash, borderline BP, IM adrenaline given, oxygen/monitoring, response and aftercare plan.",
+      "learnerFeedback": "Structured handover helps the next team continue safe observation and treatment."
+    },
+    "giveAntihistamineFirst": {
+      "label": "Give Antihistamine Before Adrenaline",
+      "group": "Unsafe actions",
+      "instruction": "Unsafe test action: antihistamines must not delay IM adrenaline in anaphylaxis with ABC compromise.",
+      "dangerousTestAction": true,
+      "sequence": 90,
+      "setsState": {
+        "antihistamineGiven": true
+      },
+      "metrics": {
+        "increment": "unsafeMedicationActions",
+        "incrementAlso": "unsafeActions"
+      },
+      "effects": {
+        "pulseRate": 4,
+        "respiratoryRate": 2,
+        "oxygenSaturation": -1,
+        "workOfBreathing": 0.04
+      },
+      "hiddenStateEffects": {
+        "reactionBurden": 0.06,
+        "shockRisk": 0.05,
+        "timeWithoutAdrenaline": 30
+      },
+      "patientDialogue": "I still can't breathe properly.",
+      "learnerFeedback": "Antihistamine is not first-line for ABC compromise and should not delay adrenaline."
+    },
+    "giveSteroidFirst": {
+      "label": "Give Steroid Before Adrenaline",
+      "group": "Unsafe actions",
+      "instruction": "Unsafe test action: steroids must not delay IM adrenaline in anaphylaxis with ABC compromise.",
+      "dangerousTestAction": true,
+      "sequence": 91,
+      "setsState": {
+        "steroidGiven": true
+      },
+      "metrics": {
+        "increment": "unsafeMedicationActions",
+        "incrementAlso": "unsafeActions"
+      },
+      "effects": {
+        "pulseRate": 4,
+        "respiratoryRate": 2,
+        "oxygenSaturation": -1
+      },
+      "hiddenStateEffects": {
+        "reactionBurden": 0.06,
+        "shockRisk": 0.05,
+        "timeWithoutAdrenaline": 30
+      },
+      "learnerFeedback": "Steroids are not immediate first-line treatment and should not delay adrenaline."
+    },
+    "useIVAdrenalineFirst": {
+      "label": "Use IV Adrenaline First",
+      "group": "Unsafe actions",
+      "instruction": "Unsafe test action: IV adrenaline is not routine first-line treatment and is restricted to experienced specialists in appropriate settings.",
+      "dangerousTestAction": true,
+      "sequence": 92,
+      "setsState": {
+        "adrenalineGivenViaWrongRoute": true,
+        "wrongDoseOrUnsafeMedicationAction": true
+      },
+      "metrics": {
+        "increment": "unsafeMedicationActions",
+        "incrementAlso": "unsafeActions"
+      },
+      "effects": {
+        "pulseRate": 25,
+        "bloodPressureSystolic": 15,
+        "consciousness": -0.03
+      },
+      "hiddenStateEffects": {
+        "shockRisk": 0.12
+      },
+      "patientDialogue": "I feel funny... my heart is racing.",
+      "learnerFeedback": "Routine first-line treatment is IM adrenaline. IV adrenaline requires specialist expertise and appropriate setting."
+    },
+    "giveFoodOrDrink": {
+      "label": "Give Food or Drink",
+      "group": "Unsafe actions",
+      "instruction": "Unsafe test action: do not give food or drink during an acute anaphylaxis emergency.",
+      "dangerousTestAction": true,
+      "sequence": 93,
+      "setsState": {
+        "foodOrDrinkGiven": true
+      },
+      "metrics": {
+        "increment": "unsafeActions"
+      },
+      "effects": {
+        "workOfBreathing": 0.03,
+        "consciousness": -0.005
+      },
+      "patientDialogue": "I feel sick.",
+      "learnerFeedback": "Avoid oral intake during acute deterioration and airway risk."
+    },
+    "askChildToWalk": {
+      "label": "Ask Child to Stand/Walk",
+      "group": "Unsafe actions",
+      "instruction": "Unsafe test action: do not make a child with suspected anaphylaxis stand or walk.",
+      "dangerousTestAction": true,
+      "sequence": 94,
+      "setsState": {
+        "askedToStandOrWalk": true
+      },
+      "metrics": {
+        "increment": "unsafeActions"
+      },
+      "effects": {
+        "pulseRate": 8,
+        "bloodPressureSystolic": -6,
+        "consciousness": -0.02
+      },
+      "hiddenStateEffects": {
+        "shockRisk": 0.08
+      },
+      "patientDialogue": "I feel dizzy.",
+      "learnerFeedback": "Standing/walking can worsen collapse risk in anaphylaxis."
+    },
+    "delayAdrenaline": {
+      "label": "Delay Adrenaline / Observe Only",
+      "group": "Unsafe actions",
+      "instruction": "Unsafe test action: observing without adrenaline is unsafe when ABC signs of anaphylaxis are present.",
+      "dangerousTestAction": true,
+      "sequence": 95,
+      "setsState": {
+        "adrenalineDelayed": true
+      },
+      "metrics": {
+        "increment": "unsafeActions",
+        "incrementAlso": "delayedCriticalActions"
+      },
+      "effects": {
+        "pulseRate": 10,
+        "bloodPressureSystolic": -8,
+        "respiratoryRate": 4,
+        "oxygenSaturation": -3,
+        "workOfBreathing": 0.12,
+        "airwaySwelling": 0.08
+      },
+      "hiddenStateEffects": {
+        "reactionBurden": 0.16,
+        "bronchospasm": 0.12,
+        "airwayOedema": 0.1,
+        "shockRisk": 0.14,
+        "timeWithoutAdrenaline": 60
+      },
+      "patientDialogue": "It's getting harder to breathe.",
+      "learnerFeedback": "Do not delay IM adrenaline when anaphylaxis has airway, breathing, or circulation features."
+    }
+  },
   "metrics": {
     "timeToRecognitionSeconds": null,
     "timeToSeniorEscalationSeconds": null,
@@ -207,7 +870,7 @@
       "min": 50,
       "max": 100,
       "unit": "%",
-      "label": "SpO₂",
+      "label": "SpO\u2082",
       "meaning": "May fall with bronchospasm, airway compromise, or exhaustion.",
       "learnerVisible": true
     },
@@ -278,7 +941,7 @@
       "criticalAbove": 39.5,
       "min": 32,
       "max": 42,
-      "unit": "°C",
+      "unit": "\u00b0C",
       "label": "Temperature",
       "meaning": "Temperature is usually normal in anaphylaxis but monitored as part of observations.",
       "learnerVisible": true
@@ -662,669 +1325,6 @@
       "reason": "Once adrenaline, oxygen and reassessment show improvement, tachycardia/tachypnoea should gradually settle rather than drift upward forever."
     }
   ],
-  "actionMappings": {
-    "confirmIdentityEngageParent": {
-      "label": "Confirm Identity / Engage Parent",
-      "group": "Initial approach",
-      "instruction": "Introduce yourself, confirm child identity if possible, and involve the parent/guardian while prioritising ABC problems.",
-      "sequence": 1,
-      "completionOnly": true,
-      "setsState": {
-        "patientIdentityConfirmed": true,
-        "parentOrGuardianEngaged": true,
-        "reassuranceGiven": true
-      },
-      "metrics": {
-        "increment": "reassuranceCount",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "effects": {
-        "pulseRate": -1,
-        "respiratoryRate": -0.5
-      },
-      "clinicalFinding": "Maya is alert but frightened. Parent confirms known peanut allergy.",
-      "patientDialogue": "I'm scared. My throat feels funny.",
-      "learnerFeedback": "Good communication helps paediatric cooperation, but ABC compromise must still be treated rapidly."
-    },
-    "startABCDE": {
-      "label": "Start Paediatric ABCDE",
-      "group": "ABCDE",
-      "instruction": "Start structured paediatric ABCDE assessment and treat life-threatening problems as they are found.",
-      "sequence": 2,
-      "setsState": {
-        "primarySurveyStarted": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Child has airway symptoms, wheeze, rash, tachycardia, and borderline blood pressure after likely allergen exposure.",
-      "learnerFeedback": "ABCDE prevents missing airway, breathing, or circulation compromise."
-    },
-    "assessAirway": {
-      "label": "A — Assess Airway",
-      "group": "ABCDE",
-      "instruction": "Assess voice, airway patency, lip/tongue swelling, stridor, and ability to speak/cry.",
-      "sequence": 3,
-      "setsState": {
-        "airwayAssessed": true,
-        "airwayPatent": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Hoarse voice with mild lip swelling. No stridor yet. Airway is patent but at risk.",
-      "patientDialogue": "My mouth feels puffy."
-    },
-    "assessBreathing": {
-      "label": "B — Assess Breathing",
-      "group": "ABCDE",
-      "instruction": "Assess respiratory rate, work of breathing, wheeze, chest movement, and SpO2.",
-      "sequence": 4,
-      "setsState": {
-        "breathingAssessed": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "RR 32, SpO2 93%, widespread wheeze, increased work of breathing.",
-      "learnerFeedback": "Breathing compromise after allergen exposure supports anaphylaxis."
-    },
-    "assessCirculation": {
-      "label": "C — Assess Circulation",
-      "group": "ABCDE",
-      "instruction": "Assess heart rate, blood pressure, capillary refill, skin signs, perfusion, and shock.",
-      "sequence": 5,
-      "setsState": {
-        "circulationAssessed": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "HR 132, BP 92 systolic, capillary refill 4 seconds, anxious/flushed with early poor perfusion.",
-      "learnerFeedback": "Children may compensate until late; borderline BP and poor perfusion are concerning."
-    },
-    "recogniseAnaphylaxis": {
-      "label": "Recognise Anaphylaxis",
-      "group": "Diagnosis / recognition",
-      "instruction": "Recognise likely anaphylaxis: allergen exposure plus airway/breathing/circulation features, with rash/mucosal swelling.",
-      "sequence": 6,
-      "requiresAnyState": {
-        "airwayAssessed": true,
-        "breathingAssessed": true,
-        "circulationAssessed": true
-      },
-      "setsState": {
-        "anaphylaxisRecognised": true
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToRecognitionSeconds",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Likely anaphylaxis: peanut exposure, airway symptoms, wheeze, rash, and circulatory compromise.",
-      "learnerFeedback": "Recognition should trigger immediate IM adrenaline and senior help."
-    },
-    "callPaediatricSeniorHelp": {
-      "label": "Call Senior / Paediatric Resus Help",
-      "group": "Escalation",
-      "instruction": "Call senior ED/paediatric/resus help. State suspected paediatric anaphylaxis with airway/breathing/circulation compromise.",
-      "sequence": 7,
-      "completionOnly": true,
-      "setsState": {
-        "seniorHelpCalled": true,
-        "paediatricTeamCalled": true,
-        "resusTeamCalled": true
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToSeniorEscalationSeconds",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Senior paediatric/resus help requested.",
-      "learnerFeedback": "Anaphylaxis can deteriorate quickly; early help is essential."
-    },
-    "attachMonitoring": {
-      "label": "Attach Monitoring",
-      "group": "Monitoring",
-      "instruction": "Attach pulse oximeter, BP cuff, and ECG monitoring. Start repeated paediatric observations.",
-      "sequence": 8,
-      "setsState": {
-        "monitoringAttached": true,
-        "pulseOxProbeAttached": true,
-        "bpCuffAttached": true,
-        "ecgMonitoringAttached": true,
-        "vitalsMonitoringStarted": true
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToMonitoringSeconds",
-        "increment": "reassessmentCount",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Monitor shows HR 132, BP 92 systolic, RR 32, SpO2 93%.",
-      "learnerFeedback": "Monitoring supports trend recognition and safe medication reassessment."
-    },
-    "giveHighFlowOxygen": {
-      "label": "Give High-Flow Oxygen",
-      "group": "Breathing",
-      "instruction": "Apply high-flow oxygen via appropriate paediatric mask if tolerated. Do not delay adrenaline.",
-      "sequence": 9,
-      "setsState": {
-        "oxygenApplied": true
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToOxygenSeconds",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "effects": {
-        "oxygenSaturation": 3.0,
-        "respiratoryRate": -1.0
-      },
-      "clinicalFinding": "Oxygen applied. SpO2 begins to improve if airway/breathing compromise is also treated.",
-      "patientDialogue": "The mask feels funny.",
-      "learnerFeedback": "Oxygen is supportive but does not replace IM adrenaline."
-    },
-    "giveIMAdrenaline": {
-      "label": "Give IM Adrenaline",
-      "group": "Adrenaline",
-      "instruction": "Give age/weight-appropriate IM adrenaline into the anterolateral thigh according to local policy. Do not delay for antihistamines or steroids.",
-      "sequence": 10,
-      "requiresState": {
-        "anaphylaxisRecognised": true
-      },
-      "setsState": {
-        "imAdrenalineGiven": true,
-        "timeSinceFirstAdrenalineSeconds": 0
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToFirstIMAdrenalineSeconds",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "effects": {
-        "bloodPressureSystolic": 8,
-        "oxygenSaturation": 2.0,
-        "workOfBreathing": -0.12,
-        "wheezeSeverity": -0.12,
-        "airwaySwelling": -0.08,
-        "pulseRate": 5
-      },
-      "hiddenStateEffects": {
-        "reactionBurden": -0.18,
-        "airwayOedema": -0.12,
-        "bronchospasm": -0.14,
-        "vasodilation": -0.16,
-        "capillaryLeak": -0.1,
-        "shockRisk": -0.12
-      },
-      "clinicalFinding": "IM adrenaline given. Airway/breathing/circulation should be reassessed within minutes.",
-      "patientDialogue": "That hurt... but I can breathe a tiny bit better.",
-      "learnerFeedback": "IM adrenaline is the key first-line treatment for anaphylaxis."
-    },
-    "positionSafely": {
-      "label": "Position Safely",
-      "group": "Supportive care",
-      "instruction": "Keep the child safe and still. Use supported sitting for severe breathing distress or lying flat if shocked, according to clinical state. Do not make them stand or walk.",
-      "sequence": 11,
-      "setsState": {
-        "positionedSafely": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "effects": {
-        "respiratoryRate": -0.5,
-        "pulseRate": -1
-      },
-      "clinicalFinding": "Child is kept safely positioned with parent nearby and staff supporting airway/breathing monitoring.",
-      "learnerFeedback": "Standing or walking can worsen collapse risk in anaphylaxis."
-    },
-    "establishIVAccess": {
-      "label": "Establish IV/IO Access",
-      "group": "Circulation / escalation",
-      "instruction": "Establish IV access, or request IO/senior help if access is difficult and the child is shocked.",
-      "sequence": 12,
-      "requiresState": {
-        "seniorHelpCalled": true
-      },
-      "setsState": {
-        "ivAccessEstablished": true
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToIVAccessSeconds",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "IV access established/prepared for fluids and emergency medication as directed.",
-      "learnerFeedback": "IV access supports shock management but should not delay IM adrenaline."
-    },
-    "prepareFluidBolus": {
-      "label": "Prepare Fluid Bolus if Shocked",
-      "group": "Circulation / escalation",
-      "instruction": "Prepare glucose-free crystalloid fluid bolus according to paediatric policy if shock/poor perfusion persists.",
-      "sequence": 13,
-      "requiresState": {
-        "ivAccessEstablished": true,
-        "monitoringAttached": true
-      },
-      "setsState": {
-        "fluidBolusPrepared": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Fluid bolus prepared for persistent poor perfusion/shock.",
-      "learnerFeedback": "Fluids are an adjunct for anaphylactic shock; adrenaline remains first-line."
-    },
-    "giveFluidBolus": {
-      "label": "Give Fluid Bolus if Indicated",
-      "group": "Circulation / escalation",
-      "instruction": "Give fluid bolus according to paediatric policy if hypotension or poor perfusion persists after adrenaline.",
-      "sequence": 14,
-      "requiresState": {
-        "fluidBolusPrepared": true,
-        "imAdrenalineGiven": true
-      },
-      "setsState": {
-        "fluidBolusGiven": true
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToFluidBolusSeconds",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "effects": {
-        "bloodPressureSystolic": 5,
-        "pulseRate": -3,
-        "consciousness": 0.01
-      },
-      "hiddenStateEffects": {
-        "shockRisk": -0.08
-      },
-      "clinicalFinding": "Perfusion improves slightly after fluid bolus if shock is present.",
-      "learnerFeedback": "Fluid bolus supports circulation in shock but does not replace adrenaline."
-    },
-    "assessDisability": {
-      "label": "D — Assess Disability",
-      "group": "ABCDE",
-      "instruction": "Assess AVPU/GCS, glucose if indicated, agitation, drowsiness, and signs of exhaustion.",
-      "sequence": 15,
-      "setsState": {
-        "disabilityAssessed": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Child is alert but scared. No seizure. No drowsiness yet.",
-      "learnerFeedback": "Drowsiness would be a serious sign of hypoxia/shock/exhaustion."
-    },
-    "exposeAssessRashTrigger": {
-      "label": "E — Expose / Rash / Trigger History",
-      "group": "ABCDE",
-      "instruction": "Expose appropriately to assess rash/angioedema while maintaining warmth and dignity. Ask parent about trigger, timing, asthma, and previous reactions.",
-      "sequence": 16,
-      "setsState": {
-        "exposureCompleted": true,
-        "rashRecognised": true,
-        "triggerHistoryTaken": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Widespread urticaria, itchy skin, lip swelling. Parent reports peanut allergy and possible exposure 15 minutes ago.",
-      "parentDialogue": "She had a reaction once before, but this is worse."
-    },
-    "reassessAfterAdrenaline": {
-      "label": "Reassess ABC After Adrenaline",
-      "group": "Reassessment",
-      "instruction": "Reassess airway, breathing, circulation, SpO2, BP, consciousness, rash, and symptom trend after IM adrenaline.",
-      "sequence": 17,
-      "requiresState": {
-        "imAdrenalineGiven": true,
-        "monitoringAttached": true
-      },
-      "setsState": {
-        "reassessmentAfterAdrenaline": true,
-        "symptomsImproving": true,
-        "symptomImprovementConfirmed": true,
-        "airwayBreathingImproved": true,
-        "abcProblemsPersist": false
-      },
-      "metrics": {
-        "increment": "reassessmentCount",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "conditionalOutcome": {
-        "successCondition": {
-          "oxygenSaturation": {
-            "above": 94
-          },
-          "bloodPressureSystolic": {
-            "above": 90
-          },
-          "consciousness": {
-            "above": 0.9
-          },
-          "workOfBreathing": {
-            "below": 0.65
-          },
-          "airwaySwelling": {
-            "below": 0.5
-          }
-        },
-        "onSuccess": {
-          "setsState": {
-            "abcProblemsPersist": false,
-            "symptomsImproving": true,
-            "symptomImprovementConfirmed": true,
-            "airwayBreathingImproved": true
-          },
-          "message": "ABC features improving after IM adrenaline. Continue observation and aftercare planning."
-        },
-        "onFailure": {
-          "setsState": {
-            "abcProblemsPersist": true,
-            "symptomsImproving": false
-          },
-          "message": "ABC problems persist. Prepare repeat IM adrenaline and escalate further."
-        }
-      },
-      "effects": {
-        "respiratoryRate": -2.5,
-        "pulseRate": -4,
-        "workOfBreathing": -0.08,
-        "wheezeSeverity": -0.06,
-        "airwaySwelling": -0.04
-      },
-      "hiddenStateEffects": {
-        "reactionBurden": -0.04,
-        "bronchospasm": -0.04,
-        "airwayOedema": -0.03,
-        "shockRisk": -0.03
-      },
-      "clinicalFinding": "ABC features are improving after IM adrenaline: oxygenation is stable, airway swelling and wheeze are reducing, perfusion is safer, and the child is settling. Continue monitoring and plan observation/aftercare.",
-      "patientDialogue": "I can breathe a bit better now.",
-      "learnerFeedback": "ABC features are improving. Continue monitoring and plan observation/aftercare. Repeat IM adrenaline only if ABC problems persist."
-    },
-    "giveSecondIMAdrenalineIfNeeded": {
-      "label": "Give Second IM Adrenaline if ABC Problems Persist",
-      "group": "Adrenaline",
-      "instruction": "If ABC problems persist after approximately 5 minutes, give a second age/weight-appropriate IM adrenaline dose according to local policy/senior direction.",
-      "sequence": 18,
-      "requiresState": {
-        "imAdrenalineGiven": true,
-        "reassessmentAfterAdrenaline": true,
-        "abcProblemsPersist": true
-      },
-      "setsState": {
-        "secondIMAdrenalineGiven": true
-      },
-      "metrics": {
-        "recordFirstTimeAs": "timeToSecondIMAdrenalineSeconds",
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "effects": {
-        "bloodPressureSystolic": 7,
-        "oxygenSaturation": 2.0,
-        "workOfBreathing": -0.12,
-        "wheezeSeverity": -0.12,
-        "airwaySwelling": -0.08,
-        "pulseRate": 4
-      },
-      "hiddenStateEffects": {
-        "reactionBurden": -0.16,
-        "airwayOedema": -0.1,
-        "bronchospasm": -0.12,
-        "vasodilation": -0.12,
-        "capillaryLeak": -0.08,
-        "shockRisk": -0.1
-      },
-      "clinicalFinding": "Second IM adrenaline given because ABC symptoms persisted.",
-      "patientDialogue": "I still feel wheezy, but it's not as scary now.",
-      "learnerFeedback": "Persistent ABC problems after the first dose require prompt reassessment and repeat treatment."
-    },
-    "giveBronchodilatorForWheeze": {
-      "label": "Give Bronchodilator for Persistent Wheeze",
-      "group": "Breathing",
-      "instruction": "Give inhaled bronchodilator for ongoing bronchospasm after IM adrenaline. Do not use it as a substitute for adrenaline.",
-      "sequence": 19,
-      "requiresState": {
-        "imAdrenalineGiven": true
-      },
-      "setsState": {
-        "bronchodilatorGiven": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "effects": {
-        "wheezeSeverity": -0.12,
-        "workOfBreathing": -0.06,
-        "oxygenSaturation": 1.0
-      },
-      "clinicalFinding": "Wheeze improves slightly after bronchodilator.",
-      "learnerFeedback": "Bronchodilator is supportive after adrenaline when wheeze persists."
-    },
-    "considerAntihistamineSteroidAfterAdrenaline": {
-      "label": "Consider Antihistamine/Steroid After Stabilisation",
-      "group": "Adjuncts",
-      "instruction": "Consider antihistamine/steroid only after first-line treatment and stabilisation, according to local policy. Do not delay adrenaline.",
-      "sequence": 20,
-      "requiresState": {
-        "imAdrenalineGiven": true
-      },
-      "setsState": {
-        "antihistamineGiven": true,
-        "steroidGiven": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Adjunct medication considered/given after adrenaline and ABC stabilisation.",
-      "learnerFeedback": "Adjuncts may help symptoms/ongoing care but are not first-line lifesaving treatment."
-    },
-    "planObservationAndAftercare": {
-      "label": "Plan Observation and Aftercare",
-      "group": "Aftercare",
-      "instruction": "Plan appropriate observation for recurrence/biphasic reaction and prepare allergy referral, auto-injector education, and discharge safety advice.",
-      "sequence": 21,
-      "requiresState": {
-        "symptomsImproving": true,
-        "reassessmentAfterAdrenaline": true
-      },
-      "setsState": {
-        "observationPlanMade": true,
-        "allergyReferralPlanned": true,
-        "autoInjectorEducationPlanned": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Observation and aftercare plan prepared: monitor for biphasic reaction, allergy referral, two auto-injectors, education, written action plan.",
-      "learnerFeedback": "Safe aftercare matters even after acute symptoms improve."
-    },
-    "prepareClinicalHandover": {
-      "label": "Prepare SBAR / ATMIST Handover",
-      "group": "Handover",
-      "instruction": "Prepare handover including age/weight, trigger, timing, ABC findings, adrenaline timing, response, ongoing concerns, and aftercare plan.",
-      "sequence": 22,
-      "completionOnly": true,
-      "setsState": {
-        "handoverPrepared": true
-      },
-      "metrics": {
-        "updateAverageQualityAs": "averageActionQuality",
-        "averageCountAs": "actionQualitySamples"
-      },
-      "clinicalFinding": "Handover ready: 9-year-old, 30 kg, peanut exposure, airway symptoms, wheeze, rash, borderline BP, IM adrenaline given, oxygen/monitoring, response and aftercare plan.",
-      "learnerFeedback": "Structured handover helps the next team continue safe observation and treatment."
-    },
-    "giveAntihistamineFirst": {
-      "label": "Give Antihistamine Before Adrenaline",
-      "group": "Unsafe actions",
-      "instruction": "Unsafe test action: antihistamines must not delay IM adrenaline in anaphylaxis with ABC compromise.",
-      "dangerousTestAction": true,
-      "sequence": 90,
-      "setsState": {
-        "antihistamineGiven": true
-      },
-      "metrics": {
-        "increment": "unsafeMedicationActions",
-        "incrementAlso": "unsafeActions"
-      },
-      "effects": {
-        "pulseRate": 4,
-        "respiratoryRate": 2,
-        "oxygenSaturation": -1,
-        "workOfBreathing": 0.04
-      },
-      "hiddenStateEffects": {
-        "reactionBurden": 0.06,
-        "shockRisk": 0.05,
-        "timeWithoutAdrenaline": 30
-      },
-      "patientDialogue": "I still can't breathe properly.",
-      "learnerFeedback": "Antihistamine is not first-line for ABC compromise and should not delay adrenaline."
-    },
-    "giveSteroidFirst": {
-      "label": "Give Steroid Before Adrenaline",
-      "group": "Unsafe actions",
-      "instruction": "Unsafe test action: steroids must not delay IM adrenaline in anaphylaxis with ABC compromise.",
-      "dangerousTestAction": true,
-      "sequence": 91,
-      "setsState": {
-        "steroidGiven": true
-      },
-      "metrics": {
-        "increment": "unsafeMedicationActions",
-        "incrementAlso": "unsafeActions"
-      },
-      "effects": {
-        "pulseRate": 4,
-        "respiratoryRate": 2,
-        "oxygenSaturation": -1
-      },
-      "hiddenStateEffects": {
-        "reactionBurden": 0.06,
-        "shockRisk": 0.05,
-        "timeWithoutAdrenaline": 30
-      },
-      "learnerFeedback": "Steroids are not immediate first-line treatment and should not delay adrenaline."
-    },
-    "useIVAdrenalineFirst": {
-      "label": "Use IV Adrenaline First",
-      "group": "Unsafe actions",
-      "instruction": "Unsafe test action: IV adrenaline is not routine first-line treatment and is restricted to experienced specialists in appropriate settings.",
-      "dangerousTestAction": true,
-      "sequence": 92,
-      "setsState": {
-        "adrenalineGivenViaWrongRoute": true,
-        "wrongDoseOrUnsafeMedicationAction": true
-      },
-      "metrics": {
-        "increment": "unsafeMedicationActions",
-        "incrementAlso": "unsafeActions"
-      },
-      "effects": {
-        "pulseRate": 25,
-        "bloodPressureSystolic": 15,
-        "consciousness": -0.03
-      },
-      "hiddenStateEffects": {
-        "shockRisk": 0.12
-      },
-      "patientDialogue": "I feel funny... my heart is racing.",
-      "learnerFeedback": "Routine first-line treatment is IM adrenaline. IV adrenaline requires specialist expertise and appropriate setting."
-    },
-    "giveFoodOrDrink": {
-      "label": "Give Food or Drink",
-      "group": "Unsafe actions",
-      "instruction": "Unsafe test action: do not give food or drink during an acute anaphylaxis emergency.",
-      "dangerousTestAction": true,
-      "sequence": 93,
-      "setsState": {
-        "foodOrDrinkGiven": true
-      },
-      "metrics": {
-        "increment": "unsafeActions"
-      },
-      "effects": {
-        "workOfBreathing": 0.03,
-        "consciousness": -0.005
-      },
-      "patientDialogue": "I feel sick.",
-      "learnerFeedback": "Avoid oral intake during acute deterioration and airway risk."
-    },
-    "askChildToWalk": {
-      "label": "Ask Child to Stand/Walk",
-      "group": "Unsafe actions",
-      "instruction": "Unsafe test action: do not make a child with suspected anaphylaxis stand or walk.",
-      "dangerousTestAction": true,
-      "sequence": 94,
-      "setsState": {
-        "askedToStandOrWalk": true
-      },
-      "metrics": {
-        "increment": "unsafeActions"
-      },
-      "effects": {
-        "pulseRate": 8,
-        "bloodPressureSystolic": -6,
-        "consciousness": -0.02
-      },
-      "hiddenStateEffects": {
-        "shockRisk": 0.08
-      },
-      "patientDialogue": "I feel dizzy.",
-      "learnerFeedback": "Standing/walking can worsen collapse risk in anaphylaxis."
-    },
-    "delayAdrenaline": {
-      "label": "Delay Adrenaline / Observe Only",
-      "group": "Unsafe actions",
-      "instruction": "Unsafe test action: observing without adrenaline is unsafe when ABC signs of anaphylaxis are present.",
-      "dangerousTestAction": true,
-      "sequence": 95,
-      "setsState": {
-        "adrenalineDelayed": true
-      },
-      "metrics": {
-        "increment": "unsafeActions",
-        "incrementAlso": "delayedCriticalActions"
-      },
-      "effects": {
-        "pulseRate": 10,
-        "bloodPressureSystolic": -8,
-        "respiratoryRate": 4,
-        "oxygenSaturation": -3,
-        "workOfBreathing": 0.12,
-        "airwaySwelling": 0.08
-      },
-      "hiddenStateEffects": {
-        "reactionBurden": 0.16,
-        "bronchospasm": 0.12,
-        "airwayOedema": 0.1,
-        "shockRisk": 0.14,
-        "timeWithoutAdrenaline": 60
-      },
-      "patientDialogue": "It's getting harder to breathe.",
-      "learnerFeedback": "Do not delay IM adrenaline when anaphylaxis has airway, breathing, or circulation features."
-    }
-  },
   "requiredActions": [
     "confirmIdentityEngageParent",
     "startABCDE",
@@ -1586,7 +1586,7 @@
     },
     "acuteSymptomsImprovingReview": {
       "type": "partial",
-      "title": "Acute Symptoms Improving — Review Care Quality",
+      "title": "Acute Symptoms Improving \u2014 Review Care Quality",
       "requires": {
         "requiredActionsCompleted": true,
         "symptomsImproving": true,
@@ -1639,7 +1639,7 @@
           "airwayBreathingImproved": false
         }
       ],
-      "message": "The child’s acute ABC features are improving, but treatment timing, ordering, reassessment, medication priorities, or care quality should be reviewed. Continue observation and aftercare planning.",
+      "message": "The child\u2019s acute ABC features are improving, but treatment timing, ordering, reassessment, medication priorities, or care quality should be reviewed. Continue observation and aftercare planning.",
       "nextStep": "Proceed to debrief."
     }
   },

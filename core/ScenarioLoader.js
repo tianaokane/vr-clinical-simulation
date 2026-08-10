@@ -40,14 +40,14 @@ export class ScenarioLoader {
   }
 
   // Internal: read and parse JSON file. Throw if file not found or parse fails.
-async _fetchJSON(filePath) {
-  try {
-    const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    throw new Error(`Failed to read ${filePath}: ${error.message}`);
+  async _fetchJSON(filePath) {
+    try {
+      const data = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(data);
+    } catch (error) {
+      throw new Error(`Failed to read ${filePath}: ${error.message}`);
+    }
   }
-}
 
   // Light validation. Catch obvious structural problems early.
   _validate(scenario, dialogue) {
@@ -67,8 +67,11 @@ async _fetchJSON(filePath) {
 
   // Extract only the fields PSM constructor expects.
   // PSM doesn't care about description, guidelineAnchors, etc. — those are for debriefing/docs.
-  // Note: scenario JSON has "actions" key, but PSM expects it as "actionMappings" in config.
+  // Note: scenario JSON can have either "actions" (new format) or "actionMappings" (old format).
   _extractPSMConfig(scenario) {
+    // Handle both "actions" (cardiac-arrest style) and "actionMappings" (fractured-femur, sepsis, anaphylaxis style)
+    const actionMappings = scenario.actions || scenario.actionMappings || {};
+    
     return {
       rhythmState: scenario.rhythmState || "unknown",
       arrestRhythm: scenario.arrestRhythm || null,
@@ -77,7 +80,7 @@ async _fetchJSON(filePath) {
       parameterConstraints: scenario.parameterConstraints || [],
       derivedParameters: scenario.derivedParameters || {},
       couplingRules: scenario.couplingRules || [],
-      actionMappings: scenario.actions || {},
+      actionMappings: actionMappings,
       metrics: scenario.metrics || {}
     };
   }
