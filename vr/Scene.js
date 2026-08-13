@@ -146,7 +146,8 @@ export class Scene {
 
       // 2. Create PatientStateModel (simulates patient physiology)
       this.psmInstance = new PatientStateModel(scenarioData);
-      console.log(`[Scene] PSM initialized`);
+      this.psmInstance.start();
+      console.log(`[Scene] PSM initialized and started`);
 
       // 3. Create DialogueEngine (manages patient conversations)
       const dialogueData = await this.loadDialogue(scenarioId);
@@ -168,8 +169,15 @@ export class Scene {
           window.uiManager.updateVitalsHUD(this.psmInstance.parameters);
         }
 
-        // Check for scenario end conditions
-        if (this._checkScenarioEndConditions(psmState, scenarioData)) {
+        // Check for scenario end conditions. PatientStateModel already
+        // evaluates this internally against the real scenario schema
+        // (endCondition.type === 'rosc_achieved', or the generic
+        // scenarioEndConditions map) and exposes the result via
+        // getScenarioOutcome(). We rely on that authoritative result
+        // instead of re-checking here, since a separate/duplicate check
+        // is easy to get out of sync with the scenario JSON schema.
+        const outcome = this.psmInstance.getScenarioOutcome();
+        if (outcome && this.state === this.STATES.PATIENT_ROOM) {
           this.handleScenarioEnd(psmState);
         }
       };
@@ -210,44 +218,19 @@ export class Scene {
     }
   }
 
-  _checkScenarioEndConditions(psmState, scenarioData) {
-    // Check if scenario end condition has been met
-    if (!scenarioData.endCondition) {
-      return false;
-    }
-
-    const condition = scenarioData.endCondition;
-
-    // Example: Cardiac arrest ends on ROSC (return of spontaneous circulation)
-    if (condition.type === 'rhythmState' && condition.value === 'rosc') {
-      return psmState.rhythmState === 'rosc';
-    }
-
-    // Example: Sepsis ends when vitals stabilized
-    if (condition.type === 'vitalsStabilized') {
-      const bp = psmState.bloodPressureSystolic || 0;
-      const consciousness = psmState.consciousness || 0;
-      return bp >= 90 && consciousness > 0.6;
-    }
-
-    // Example: Time limit exceeded
-    if (condition.type === 'timeLimit') {
-      const elapsedSeconds = (Date.now() - this.scenarioStartTime) / 1000;
-      return elapsedSeconds >= condition.value;
-    }
-
-    return false;
-  }
-
   async handleScenarioEnd(finalState) {
     // Generate debrief using DebriefingSystem
     try {
       const debriefSystem = new DebriefingSystem();
       const actionLog = this.psmInstance.getActionLog?.() || {};
+      // generateDebrief's real signature is (psmLog, actionLog, finalState, scenarioId) —
+      // finalState here is the flat physiology snapshot passed into handleScenarioEnd
+      // (rhythmState, consciousness, oxygenSaturation, bloodPressureSystolic, ...),
+      // which is what DebriefingSystem._scoreOutcome() actually reads.
       const debriefData = debriefSystem.generateDebrief(
+        this.psmInstance.history,
         actionLog,
         finalState,
-        this.psmInstance.simulationState,
         this.currentScenarioId
       );
 

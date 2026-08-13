@@ -227,6 +227,32 @@ export class PatientStateModel {
         this._checkScenarioEndConditions()
 
         console.log(`[t=${this._elapsedSeconds()}s]`, this._summaryLine())
+
+        if (this.onStateChange) {
+            this.onStateChange(this._buildFlatState())
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Flat state (for consumers like Scene.js/VirtualPatient.js that
+    // expect plain numeric fields rather than {value, min, max, ...}
+    // parameter objects — same shape DialogueEngine.getCurrentState()
+    // falls back to).
+    // ─────────────────────────────────────────────────────────────
+
+    _buildFlatState() {
+        const state = {
+            rhythmState: this.rhythmState,
+            arrestRhythm: this.arrestRhythm
+        }
+
+        for (const [key, param] of Object.entries(this.parameters)) {
+            state[key] = param.value
+        }
+
+        Object.assign(state, this.simulationState)
+
+        return state
     }
 
     _summaryLine() {
@@ -480,6 +506,10 @@ export class PatientStateModel {
                 .join(' '),
             result.message ? `— ${result.message}` : ''
         )
+
+        if (this.onStateChange) {
+            this.onStateChange(this._buildFlatState())
+        }
 
         return result
     }
@@ -901,6 +931,30 @@ export class PatientStateModel {
 
     getCompletedActions() {
         return [...this._completedActions]
+    }
+
+    // Builds the { actionId: { timestamp, quality, outcome } } shape
+    // DebriefingSystem.generateDebrief() expects for scoring timing,
+    // sequence, and critical-action penalties (e.g.
+    // actionLog.callCrashTeam?.timestamp). Uses the first logged
+    // occurrence of each action, matching the "time to first X" metrics
+    // used throughout scoring. Timestamp is in milliseconds to match
+    // the goldStandard.*Seconds * 1000 comparisons in DebriefingSystem.
+    getActionLog() {
+        const log = {}
+
+        for (const entry of this.history) {
+            if (entry.type !== 'action') continue
+            if (log[entry.action]) continue
+
+            log[entry.action] = {
+                timestamp: entry.time * 1000,
+                quality: entry.quality,
+                outcome: entry.outcome
+            }
+        }
+
+        return log
     }
 
     getActionDefinitions() {

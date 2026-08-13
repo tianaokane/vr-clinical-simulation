@@ -127,7 +127,8 @@ export class DebriefingSystem {
     const debrief = {
       scenarioId,
       timestamp: new Date().toISOString(),
-      summary: {},
+      summary: { finalState },
+      actionLog,
       scores: {},
       learningPoints: [],
       competencyLevel: null,

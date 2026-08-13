@@ -142,6 +142,15 @@ export class UIManager {
   // VITALS HUD UPDATES
   // ═══════════════════════════════════════════════════════════════════════════
 
+  // Only fall back to the default when the value is missing/non-numeric.
+  // Using `||` here is wrong for vitals: a real reading of 0 (e.g. no
+  // palpable pulse or unmeasurable BP during cardiac arrest) is falsy in
+  // JS and would otherwise get silently replaced by the "normal" default,
+  // hiding the true critical state from the trainee.
+  numericOrDefault(value, fallback) {
+    return typeof value === 'number' && !Number.isNaN(value) ? value : fallback;
+  }
+
   updateVitalsHUD(parameters) {
     // Update real-time vitals display from PSM parameters
     const hrElement = document.getElementById('vitals-hr');
@@ -150,7 +159,7 @@ export class UIManager {
     const consciousnessElement = document.getElementById('vitals-consciousness');
 
     if (hrElement && parameters?.pulseRate) {
-      const hr = Math.round(parameters.pulseRate.value || 0);
+      const hr = Math.round(this.numericOrDefault(parameters.pulseRate.value, 0));
       hrElement.textContent = `HR: ${hr} bpm`;
       // Color-code: green < 100, yellow 100-120, red > 120
       if (hr < 100) {
@@ -163,7 +172,7 @@ export class UIManager {
     }
 
     if (bpElement && parameters?.bloodPressureSystolic) {
-      const systolic = Math.round(parameters.bloodPressureSystolic.value || 120);
+      const systolic = Math.round(this.numericOrDefault(parameters.bloodPressureSystolic.value, 120));
       bpElement.textContent = `BP: ${systolic}/80 mmHg`;
       // Color-code: green 90-140, yellow 70-89 or 140-160, red < 70 or > 160
       if (systolic >= 90 && systolic <= 140) {
@@ -176,7 +185,7 @@ export class UIManager {
     }
 
     if (spo2Element && parameters?.oxygenSaturation) {
-      const spo2 = Math.round(parameters.oxygenSaturation.value || 95);
+      const spo2 = Math.round(this.numericOrDefault(parameters.oxygenSaturation.value, 95));
       spo2Element.textContent = `SpO₂: ${spo2}%`;
       // Color-code: green >= 94, yellow 90-93, red < 90
       if (spo2 >= 94) {
@@ -189,7 +198,7 @@ export class UIManager {
     }
 
     if (consciousnessElement && parameters?.consciousness) {
-      const consciousnessPercent = Math.round((parameters.consciousness.value || 1.0) * 100);
+      const consciousnessPercent = Math.round(this.numericOrDefault(parameters.consciousness.value, 1.0) * 100);
       consciousnessElement.textContent = `Consciousness: ${consciousnessPercent}%`;
       if (consciousnessPercent >= 80) {
         consciousnessElement.className = 'vitals-normal';
