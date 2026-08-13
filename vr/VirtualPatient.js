@@ -1,9 +1,10 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
 export class VirtualPatient {
-  constructor(scene, scenarioId) {
+  constructor(scene, scenarioId, scenarioConfig = null) {
     this.scene = scene;
     this.scenarioId = scenarioId;
+    this.scenarioConfig = scenarioConfig;
 
     // Patient group (all body parts)
     this.group = new THREE.Group();
@@ -16,6 +17,18 @@ export class VirtualPatient {
     this.rightArm = null;
     this.leftLeg = null;
     this.rightLeg = null;
+
+    // Interaction anchor points -- named 3D markers matching the
+    // `validSites` values already authored in the scenario JSON (see
+    // core/InteractionSystem.js / core/PatientStateModel.js). These are
+    // not part of the visual rig; they're small, normally-invisible
+    // targets a raycaster can hit, positioned relative to this
+    // placeholder box body. When the real character rig lands these
+    // should become bone-relative sockets instead of hand-placed
+    // offsets, but the *ids* stay the same so nothing downstream
+    // (scenario JSON, InteractionSystem, PatientInteractionController)
+    // needs to change. Keyed by siteId -> THREE.Mesh.
+    this.anchors = {};
 
     // Eyes and expressions
     this.leftEye = null;
@@ -48,6 +61,7 @@ export class VirtualPatient {
     // Build the avatar
     this.buildBody();
     this.buildFace();
+    this.buildAnchors();
     this.buildVitalsDisplay();
 
     // Position patient in room
@@ -179,6 +193,70 @@ export class VirtualPatient {
     ));
     this.mouth = new THREE.Line(mouthGeometry, mouthMaterial);
     this.group.add(this.mouth);
+  }
+
+  // Small markers at the sites the scenario JSON actually references via
+  // `validSites` -- leftArm/rightArm (IV access), leftThigh/rightThigh
+  // (IM injection), and injuredLeg (whichever physical leg this
+  // scenario's data marks as injured, for femur-style scenarios).
+  // Hidden by default (opacity 0); PatientInteractionController shows
+  // and raycasts against only the sites relevant to the action the
+  // trainee just picked, via setSelectableSites().
+  buildAnchors() {
+    const markerGeometry = new THREE.SphereGeometry(0.06, 12, 12);
+
+    const defineAnchor = (siteId, x, y, z) => {
+      const material = new THREE.MeshBasicMaterial({
+        color: 0x2563eb,
+        transparent: true,
+        opacity: 0.0,
+        depthTest: false
+      });
+      const marker = new THREE.Mesh(markerGeometry, material);
+      marker.position.set(x, y, z);
+      marker.renderOrder = 999;
+      marker.userData.siteId = siteId;
+      marker.userData.selectable = false;
+      this.group.add(marker);
+      this.anchors[siteId] = marker;
+    };
+
+    defineAnchor('leftArm', -0.35, 1.05, 0.09);
+    defineAnchor('rightArm', 0.35, 1.05, 0.09);
+    defineAnchor('leftThigh', -0.15, 0.0, 0.09);
+    defineAnchor('rightThigh', 0.15, 0.0, 0.09);
+
+    // injuredLeg maps to whichever physical leg this scenario's data
+    // marks as injured (learnerVisibleObjects.injuredLeftLeg /
+    // injuredRightLeg), defaulting to the right leg since that's the
+    // only injury side authored so far (fractured-femur-adult).
+    const injuredIsLeft = this.scenarioConfig?.learnerVisibleObjects?.injuredLeftLeg === true;
+    defineAnchor('injuredLeg', injuredIsLeft ? -0.15 : 0.15, -0.2, 0.09);
+  }
+
+  getAnchor(siteId) {
+    return this.anchors[siteId] ?? null;
+  }
+
+  // Mark the given site ids as selectable: shown (opaque) and included
+  // in getSelectableAnchorMeshes() for raycasting. Everything else is
+  // hidden and excluded, so a click can't accidentally resolve to a site
+  // the current action doesn't actually offer.
+  setSelectableSites(siteIds) {
+    const active = new Set(siteIds ?? []);
+    for (const [siteId, marker] of Object.entries(this.anchors)) {
+      const isActive = active.has(siteId);
+      marker.material.opacity = isActive ? 0.85 : 0.0;
+      marker.userData.selectable = isActive;
+    }
+  }
+
+  clearSiteSelection() {
+    this.setSelectableSites([]);
+  }
+
+  getSelectableAnchorMeshes() {
+    return Object.values(this.anchors).filter((marker) => marker.userData.selectable);
   }
 
   buildVitalsDisplay() {

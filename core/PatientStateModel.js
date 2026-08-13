@@ -369,7 +369,46 @@ export class PatientStateModel {
     // Actions
     // ─────────────────────────────────────────────────────────────
 
-    applyAction(actionId, qualityScore = 1.0) {
+    // Read-only version of applyAction's guard clauses — lets a menu/UI
+    // layer (InteractionSystem, Scene.js, a future voice pathway) ask
+    // "could this be selected right now, and if not why" without mutating
+    // state or writing a log entry. Mirrors applyAction's checks in the
+    // same order so "allowed here" and "succeeds if applied" never drift
+    // apart from each other.
+    canApplyAction(actionId) {
+        if (!this.isRunning) {
+            return { allowed: false, reason: 'Scenario is not running' }
+        }
+
+        if (this._scenarioEnded) {
+            return { allowed: false, reason: 'Scenario has ended' }
+        }
+
+        const mappings = this.scenarioConfig?.actionMappings ?? {}
+        const action = mappings[actionId]
+
+        if (!action) {
+            return { allowed: false, reason: `Unknown action: ${actionId}` }
+        }
+
+        if (action.oneShot && action._fired) {
+            return { allowed: false, reason: `${action.label ?? actionId} already completed` }
+        }
+
+        const preconditionFailure = this._firstConditionFailure(action.preconditions ?? {})
+        if (preconditionFailure) {
+            return { allowed: false, reason: action.preconditionMessage ?? preconditionFailure }
+        }
+
+        const requiredStateFailure = this._firstRequiredStateFailure(action.requiresState ?? {})
+        if (requiredStateFailure) {
+            return { allowed: false, reason: action.requiredStateMessage ?? requiredStateFailure }
+        }
+
+        return { allowed: true, reason: null }
+    }
+
+    applyAction(actionId, qualityScore = 1.0, { site = null } = {}) {
         if (!this.isRunning) {
             return { ok: false, outcome: 'not_running', actionId }
         }
@@ -395,6 +434,24 @@ export class PatientStateModel {
 
         const quality = Math.max(0, Math.min(1, Number(qualityScore) || 0))
 
+        // Site validation lives here (not just in InteractionSystem) so any
+        // caller of applyAction — the interaction system, a future voice/LLM
+        // pathway, or a direct test call — gets the same guarantee: a site
+        // outside the action's authored validSites is rejected rather than
+        // silently accepted. Actions without validSites don't care about site.
+        if (Array.isArray(action.validSites) && site && !action.validSites.includes(site)) {
+            const result = {
+                ok: false,
+                outcome: 'invalid_site',
+                actionId,
+                message: `${site} is not a valid site for ${action.label ?? actionId}`
+            }
+
+            this._logAction(actionId, quality, {}, result.outcome, site)
+            console.warn(`[action blocked] ${action.label ?? actionId}: invalid site '${site}'`)
+            return result
+        }
+
         if (action.oneShot && action._fired) {
             const result = {
                 ok: false,
@@ -403,7 +460,7 @@ export class PatientStateModel {
                 message: `${action.label ?? actionId} already completed`
             }
 
-            this._logAction(actionId, quality, {}, result.outcome)
+            this._logAction(actionId, quality, {}, result.outcome, site)
             console.warn(`[action blocked] ${action.label ?? actionId} — already fired this scenario`)
             return result
         }
@@ -419,7 +476,7 @@ export class PatientStateModel {
                 message
             }
 
-            this._logAction(actionId, quality, {}, result.outcome)
+            this._logAction(actionId, quality, {}, result.outcome, site)
             console.warn(`[action blocked] ${action.label ?? actionId}: ${message}`)
             return result
         }
@@ -435,7 +492,7 @@ export class PatientStateModel {
                 message
             }
 
-            this._logAction(actionId, quality, {}, result.outcome)
+            this._logAction(actionId, quality, {}, result.outcome, site)
             console.warn(`[action blocked] ${action.label ?? actionId}: ${message}`)
             return result
         }
@@ -485,7 +542,7 @@ export class PatientStateModel {
 
         const outcome = conditionalResult?.outcome ?? (action.completionOnly ? 'completed' : 'applied')
 
-        this._logAction(actionId, quality, appliedEffects, outcome)
+        this._logAction(actionId, quality, appliedEffects, outcome, site)
 
         const result = {
             ok: true,
@@ -493,6 +550,7 @@ export class PatientStateModel {
             actionId,
             label: action.label ?? actionId,
             quality,
+            site,
             effects: appliedEffects,
             message: conditionalResult?.message ?? action.learnerFeedback ?? null
         }
@@ -990,14 +1048,15 @@ export class PatientStateModel {
         this.history.push(snapshot)
     }
 
-    _logAction(actionId, quality, effects, outcome = 'applied') {
+    _logAction(actionId, quality, effects, outcome = 'applied', site = null) {
         this.history.push({
             type: 'action',
             time: this._elapsedSeconds(),
             action: actionId,
             quality,
             effects,
-            outcome
+            outcome,
+            site
         })
     }
 

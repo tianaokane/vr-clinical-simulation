@@ -1,7 +1,8 @@
 export class UIManager {
-  constructor(scene, inputHandler) {
+  constructor(scene, inputHandler, patientInteractionController = null) {
     this.scene = scene;
     this.inputHandler = inputHandler;
+    this.patientInteractionController = patientInteractionController;
 
     // UI Elements
     this.menuOverlay = null;
@@ -9,6 +10,7 @@ export class UIManager {
     this.loadingScreen = null;
     this.vitalsHUD = null;
     this.debriefOverlay = null;
+    this.actionMenuHUD = null;
 
     // Initialize UI elements
     this.initializeUIElements();
@@ -20,6 +22,7 @@ export class UIManager {
     this.scene.registerUIOverlay('loadingScreen', this.loadingScreen);
     this.scene.registerUIOverlay('vitalsHUD', this.vitalsHUD);
     this.scene.registerUIOverlay('debriefUI', this.debriefOverlay);
+    this.scene.registerUIOverlay('actionMenuHUD', this.actionMenuHUD);
 
     // Listen for scene state changes
     this.scene.onStateChanged = (state) => this.onSceneStateChanged(state);
@@ -35,9 +38,10 @@ export class UIManager {
     this.loadingScreen = document.getElementById('loading-screen');
     this.vitalsHUD = document.getElementById('vitals-hud');
     this.debriefOverlay = document.getElementById('debrief-overlay');
+    this.actionMenuHUD = document.getElementById('action-menu-hud');
 
-    if (!this.menuOverlay || !this.scenarioPickerOverlay || !this.loadingScreen || 
-        !this.vitalsHUD || !this.debriefOverlay) {
+    if (!this.menuOverlay || !this.scenarioPickerOverlay || !this.loadingScreen ||
+        !this.vitalsHUD || !this.debriefOverlay || !this.actionMenuHUD) {
       console.error('UI elements not found in DOM');
     }
   }
@@ -86,6 +90,13 @@ export class UIManager {
     // Hide all overlays first
     this.hideAll();
 
+    // Detach the interaction controller whenever we're not in the room,
+    // so a stray click can't resolve against a scenario that's no
+    // longer active. Re-attached below for PATIENT_ROOM.
+    if (this.patientInteractionController && state !== this.scene.STATES.PATIENT_ROOM) {
+      this.patientInteractionController.detach();
+    }
+
     // Show relevant overlay based on state
     switch (state) {
       case this.scene.STATES.MENU:
@@ -103,6 +114,10 @@ export class UIManager {
         break;
       case this.scene.STATES.PATIENT_ROOM:
         this.showVitalsHUD();
+        this.showActionMenuHUD();
+        if (this.patientInteractionController && this.scene.interactionSystem && this.scene.patientAvatar) {
+          this.patientInteractionController.attach(this.scene.interactionSystem, this.scene.patientAvatar);
+        }
         break;
       case this.scene.STATES.DEBRIEF:
         this.showDebrief();
@@ -116,6 +131,7 @@ export class UIManager {
     this.loadingScreen.style.display = 'none';
     this.vitalsHUD.style.display = 'none';
     this.debriefOverlay.style.display = 'none';
+    this.actionMenuHUD.style.display = 'none';
   }
 
   showMenu() {
@@ -132,6 +148,10 @@ export class UIManager {
 
   showVitalsHUD() {
     this.vitalsHUD.style.display = 'block';
+  }
+
+  showActionMenuHUD() {
+    this.actionMenuHUD.style.display = 'block';
   }
 
   showDebrief() {

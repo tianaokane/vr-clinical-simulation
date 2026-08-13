@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AR/VR First Aid — Interaction System Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef1f4; color: #111827; padding: 16px; font-size: 13px; }
+        .app {
+            display: grid;
+            grid-template-columns: minmax(360px, 1.3fr) minmax(280px, 0.9fr);
+            gap: 12px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+        .header { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+        .dot { width: 9px; height: 9px; border-radius: 50%; background: #dc2626; flex-shrink: 0; }
+        .dot.live { background: #16a34a; animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .status-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .patient { font-size: 15px; font-weight: 700; }
+        .scenario { font-size: 12px; color: #64748b; margin-top: 1px; }
+        .elapsed { margin-left: auto; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; border: 1px solid transparent; }
+        .badge-red { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+        .badge-green { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+        .badge-blue { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+        .toolbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        select, button { font: inherit; font-size: 12px; border-radius: 7px; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; padding: 8px 12px; cursor: pointer; }
+        button:hover, select:hover { background: #f1f5f9; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        button:active:not(:disabled) { transform: scale(0.98); }
+        .btn-primary { background: #eff6ff; border-color: #93c5fd; color: #1d4ed8; font-weight: 700; }
+        .btn-green { background: #f0fdf4; border-color: #86efac; color: #15803d; font-weight: 700; }
+        .btn-danger { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; font-weight: 700; }
+        .section-title { font-size: 10px; font-weight: 800; color: #64748b; letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+
+        /* Category tabs */
+        .category-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+        .category-tab {
+            padding: 7px 12px; border-radius: 999px; border: 1px solid #cbd5e1; background: #f8fafc;
+            font-weight: 700; font-size: 11.5px; color: #475569; cursor: pointer;
+        }
+        .category-tab.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+        .category-tab.category-unsafe { border-color: #fca5a5; color: #b91c1c; }
+        .category-tab.category-unsafe.active { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+
+        /* Action list */
+        .action-list { display: flex; flex-direction: column; gap: 6px; }
+        .action-row {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px;
+            border: 1px solid #e2e8f0; background: #f8fafc; cursor: pointer;
+        }
+        .action-row:hover:not(.disabled) { background: #eff6ff; border-color: #bfdbfe; }
+        .action-row.disabled { cursor: not-allowed; opacity: 0.55; }
+        .action-row.dangerous { border-color: #fecaca; }
+        .action-row.dangerous:hover:not(.disabled) { background: #fef2f2; border-color: #fca5a5; }
+        .action-main { flex: 1; min-width: 0; }
+        .action-label { font-weight: 700; font-size: 12.5px; }
+        .action-instruction { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .action-reason { font-size: 10.5px; color: #b91c1c; margin-top: 2px; }
+        .action-tag { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: #94a3b8; }
+
+        /* Site / capture sub-panel */
+        .subpanel { margin-top: 14px; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1; background: #f8fafc; }
+        .subpanel-title { font-weight: 800; font-size: 11.5px; margin-bottom: 8px; }
+        .site-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .capture-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .capture-row input { width: 70px; font: inherit; font-size: 12px; border-radius: 7px; border: 1px solid #cbd5e1; padding: 7px 9px; }
+        .capture-row label { font-size: 11px; display: flex; align-items: center; gap: 5px; }
+
+        /* Vitals */
+        .vitals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+        .vital { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 9px 10px; }
+        .vital-label { font-size: 9.5px; font-weight: 800; color: #94a3b8; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 5px; }
+        .vital-value { font-size: 22px; font-weight: 850; line-height: 1.15; overflow-wrap: break-word; }
+        .vital-value.is-text { font-size: 13px; font-weight: 800; text-transform: capitalize; }
+        .vital-unit { font-size: 9.5px; color: #94a3b8; margin-top: 3px; }
+
+        /* Feedback / log */
+        .feedback-box { min-height: 40px; font-size: 12.5px; color: #334155; line-height: 1.4; }
+        .log { height: 160px; overflow-y: auto; font-size: 11px; font-family: 'SF Mono', Consolas, monospace; display: flex; flex-direction: column; gap: 2px; }
+        .log-entry { display: flex; gap: 9px; padding: 3px 0; border-bottom: 1px solid #f8fafc; }
+        .log-t { color: #94a3b8; min-width: 44px; flex-shrink: 0; }
+        .log-ok { color: #16a34a; }
+        .log-warn { color: #d97706; }
+        .log-err { color: #dc2626; }
+        .log-info { color: #2563eb; }
+        .small-note { font-size: 11px; color: #64748b; line-height: 1.35; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header card">
+        <div class="dot" id="dot"></div>
+        <div>
+            <div class="status-label" id="statusText">Stopped</div>
+            <div class="patient" id="patientLabel">—</div>
+            <div class="scenario" id="scenarioLabel">—</div>
+        </div>
+        <span id="rhythmBadge" class="badge badge-red" style="display:none">—</span>
+        <div class="elapsed" id="timeDisplay">t=0s</div>
+    </div>
+
+    <div class="toolbar card">
+        <label class="status-label" for="scenarioSelect">Scenario</label>
+        <select id="scenarioSelect"></select>
+        <button class="btn-primary" id="btnLoadScenario">Load</button>
+        <button class="btn-green" id="btnStart">▶ Start</button>
+        <button id="btnStop">■ Stop</button>
+        <span class="small-note">Trainee-facing interaction system: category → action → site/technique → confirm. Every selection resolves through the same InteractionSystem.select() call regardless of input device.</span>
+    </div>
+
+    <div class="card">
+        <div class="section-title" id="categoryTitle">Actions</div>
+        <div class="category-tabs" id="categoryTabs"></div>
+        <div class="action-list" id="actionList"></div>
+        <div id="subpanel"></div>
+        <div class="subpanel" style="margin-top:14px;">
+            <div class="subpanel-title">Patient response</div>
+            <div class="feedback-box" id="feedbackBox">Load a scenario and select an action to begin.</div>
+        </div>
+    </div>
+
+    <div class="right-col" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="card">
+            <div class="section-title">Vitals (learner-visible)</div>
+            <div class="vitals-grid" id="vitalsGrid"></div>
+        </div>
+        <div class="card">
+            <div class="section-title">Event log</div>
+            <div class="log" id="eventLog"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { PatientStateModel } from './core/PatientStateModel.js'
+    import { InteractionSystem } from './core/InteractionSystem.js'
+    import { CPRQualityAnalyzer } from './core/CPRQualityAnalyzer.js'
+
+    const scenarioFiles = [
+        'cardiac-arrest-adult',
+        'fractured-femur-adult',
+        'anaphylaxis-paediatric',
+        'sepsis-adult'
+    ]
+
+    let scenario = null
+    let model = null
+    let interaction = null
+    let activeCategory = null
+
+    const els = {
+        dot: document.getElementById('dot'),
+        statusText: document.getElementById('statusText'),
+        patientLabel: document.getElementById('patientLabel'),
+        scenarioLabel: document.getElementById('scenarioLabel'),
+        rhythmBadge: document.getElementById('rhythmBadge'),
+        timeDisplay: document.getElementById('timeDisplay'),
+        scenarioSelect: document.getElementById('scenarioSelect'),
+        categoryTabs: document.getElementById('categoryTabs'),
+        actionList: document.getElementById('actionList'),
+        subpanel: document.getElementById('subpanel'),
+        feedbackBox: document.getElementById('feedbackBox'),
+        vitalsGrid: document.getElementById('vitalsGrid'),
+        eventLog: document.getElementById('eventLog')
+    }
+
+    for (const id of scenarioFiles) {
+        const option = document.createElement('option')
+        option.value = id
+        option.textContent = id
+        els.scenarioSelect.appendChild(option)
+    }
+
+    await loadScenario(els.scenarioSelect.value)
+
+    document.getElementById('btnLoadScenario').addEventListener('click', async () => {
+        await loadScenario(els.scenarioSelect.value)
+    })
+
+    document.getElementById('btnStart').addEventListener('click', () => {
+        const result = model.start()
+        if (result.ok) {
+            els.dot.classList.add('live')
+            els.statusText.textContent = 'Running'
+            addLog('Simulation started', 'info')
+        }
+        renderAll()
+    })
+
+    document.getElementById('btnStop').addEventListener('click', () => {
+        model.stop('manual_stop')
+        els.dot.classList.remove('live')
+        els.statusText.textContent = 'Stopped manually'
+        renderAll()
+    })
+
+    async function loadScenario(id) {
+        if (model?.isRunning) model.stop('scenario_reload')
+
+        try {
+            const response = await fetch(`./scenarios/${id}.json`, { cache: 'no-store' })
+            if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+            scenario = await response.json()
+
+            model = new PatientStateModel(scenario)
+            interaction = new InteractionSystem(model)
+            window.model = model
+            window.interaction = interaction
+
+            model._tick = wrapTick(model._tick.bind(model))
+
+            activeCategory = interaction.getCategories()[0] ?? null
+
+            els.patientLabel.textContent = patientText()
+            els.scenarioLabel.textContent = scenario.scenarioName ?? scenario.scenarioId ?? id
+            els.dot.classList.remove('live')
+            els.statusText.textContent = 'Stopped'
+            els.feedbackBox.textContent = 'Load a scenario and select an action to begin.'
+            els.subpanel.innerHTML = ''
+            clearLog()
+            addLog(`Scenario loaded: ${scenario.scenarioName ?? id}`, 'info')
+
+            renderAll()
+        } catch (err) {
+            addLog(`Could not load scenario '${id}': ${err.message}`, 'err')
+            console.error(err)
+        }
+    }
+
+    function wrapTick(originalTick) {
+        return function () {
+            originalTick()
+            renderAll()
+            if (!model.isRunning) {
+                els.dot.classList.remove('live')
+                updateStatusFromModel()
+            }
+        }
+    }
+
+    function updateStatusFromModel() {
+        const outcome = model?.getScenarioOutcome?.()
+        if (!outcome) {
+            els.statusText.textContent = model?.isRunning ? 'Running' : 'Stopped'
+            return
+        }
+        els.statusText.textContent = outcome.type === 'success'
+            ? `Completed — ${outcome.title}`
+            : `Ended — ${outcome.title}`
+    }
+
+    function patientText() {
+        const p = scenario?.patient ?? {}
+        const name = p.name ?? 'Unnamed patient'
+        const age = p.age !== undefined ? `${p.age}` : '—'
+        const sex = p.sex ? String(p.sex)[0].toUpperCase() : '—'
+        return `${name} · ${age}${sex}`
+    }
+
+    // ── Rendering ───────────────────────────────────────────────────
+
+    function renderAll() {
+        renderCategoryTabs()
+        renderActionList()
+        renderVitals()
+        renderRhythm()
+        els.timeDisplay.textContent = `t=${model?._elapsedSeconds?.() ?? 0}s`
+    }
+
+    function renderCategoryTabs() {
+        if (!interaction) return
+        const categories = interaction.getCategories()
+        els.categoryTabs.innerHTML = ''
+
+        if (!categories.includes(activeCategory)) {
+            activeCategory = categories[0] ?? null
+        }
+
+        for (const category of categories) {
+            const tab = document.createElement('button')
+            tab.className = 'category-tab' + (category === activeCategory ? ' active' : '') + (category === 'Unsafe' ? ' category-unsafe' : '')
+            tab.textContent = category
+            tab.addEventListener('click', () => {
+                activeCategory = category
+                els.subpanel.innerHTML = ''
+                renderAll()
+            })
+            els.categoryTabs.appendChild(tab)
+        }
+    }
+
+    function renderActionList() {
+        els.actionList.innerHTML = ''
+        if (!interaction || !activeCategory) return
+
+        const actions = interaction.getActionsForCategory(activeCategory)
+
+        for (const action of actions) {
+            const row = document.createElement('div')
+            row.className = 'action-row' + (action.allowed ? '' : ' disabled') + (action.dangerous ? ' dangerous' : '')
+
+            const tags = []
+            if (action.captureType) tags.push('technique capture')
+            if (action.validSites) tags.push('site selection')
+            if (action.dangerous) tags.push('unsafe test action')
+
+            row.innerHTML = `
+                <div class="action-main">
+                    <div class="action-label">${action.label}</div>
+                    <div class="action-instruction">${action.instruction}</div>
+                    ${action.allowed ? '' : `<div class="action-reason">${action.reason ?? 'Not currently available'}</div>`}
+                    ${tags.length ? `<div class="action-tag">${tags.join(' · ')}</div>` : ''}
+                </div>`
+
+            if (action.allowed) {
+                row.addEventListener('click', () => beginSelection(action))
+            }
+
+            els.actionList.appendChild(row)
+        }
+    }
+
+    // ── Selection flow: site picker / capture control / direct confirm ─
+
+    function beginSelection(action) {
+        els.subpanel.innerHTML = ''
+
+        if (action.captureType === 'compression-rate-depth') {
+            renderCaptureSubpanel(action)
+            return
+        }
+
+        if (action.validSites) {
+            renderSiteSubpanel(action)
+            return
+        }
+
+        confirmAction(action.id, {})
+    }
+
+    function renderSiteSubpanel(action) {
+        const panel = document.createElement('div')
+        panel.className = 'subpanel'
+        panel.innerHTML = `<div class="subpanel-title">${action.label} — choose a site</div>`
+
+        const row = document.createElement('div')
+        row.className = 'site-row'
+
+        for (const site of action.validSites) {
+            const btn = document.createElement('button')
+            btn.className = 'btn-primary'
+            btn.textContent = siteLabel(site)
+            btn.addEventListener('click', () => {
+                els.subpanel.innerHTML = ''
+                confirmAction(action.id, { site })
+            })
+            row.appendChild(btn)
+        }
+
+        panel.appendChild(row)
+        els.subpanel.innerHTML = ''
+        els.subpanel.appendChild(panel)
+    }
+
+    function siteLabel(site) {
+        return site.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())
+    }
+
+    // Mirrors the measured-CPR control from index.html — same
+    // CPRQualityAnalyzer call, just presented as this action type's
+    // confirm step instead of a standalone dev-harness control.
+    function renderCaptureSubpanel(action) {
+        const scenarioAction = scenario.actionMappings[action.id]
+        const qualityEffects = scenarioAction.qualityEffects
+            ?? scenario.actionMappings.cprCompressions?.qualityEffects
+        const rateRange = qualityEffects?.rateTargetPerMinute ?? {}
+        const depthRange = qualityEffects?.depthTargetCm ?? {}
+        const rateMid = ((rateRange.min ?? 100) + (rateRange.max ?? 120)) / 2
+        const depthMid = ((depthRange.min ?? 5) + (depthRange.max ?? 6)) / 2
+
+        const panel = document.createElement('div')
+        panel.className = 'subpanel'
+        panel.innerHTML = `<div class="subpanel-title">${action.label} — measured technique</div>`
+
+        const row = document.createElement('div')
+        row.className = 'capture-row'
+
+        const rateInput = document.createElement('input')
+        rateInput.type = 'number'
+        rateInput.value = Math.round(rateMid)
+
+        const depthInput = document.createElement('input')
+        depthInput.type = 'number'
+        depthInput.step = 0.1
+        depthInput.value = depthMid
+
+        const rateLabel = document.createElement('label')
+        rateLabel.textContent = 'rate/min'
+        rateLabel.appendChild(rateInput)
+
+        const depthLabel = document.createElement('label')
+        depthLabel.textContent = 'depth cm'
+        depthLabel.appendChild(depthInput)
+
+        const applyBtn = document.createElement('button')
+        applyBtn.className = 'btn-primary'
+        applyBtn.textContent = 'Apply measured'
+        applyBtn.addEventListener('click', () => {
+            const quality = CPRQualityAnalyzer.scoreCompression(
+                { ratePerMinute: Number(rateInput.value), depthCm: Number(depthInput.value) },
+                qualityEffects ?? {}
+            )
+            els.subpanel.innerHTML = ''
+            confirmAction(action.id, { quality })
+        })
+
+        row.appendChild(rateLabel)
+        row.appendChild(depthLabel)
+        row.appendChild(applyBtn)
+        panel.appendChild(row)
+        els.subpanel.innerHTML = ''
+        els.subpanel.appendChild(panel)
+    }
+
+    function confirmAction(actionId, { site, quality } = {}) {
+        const result = interaction.select(actionId, { site, quality: quality ?? 1.0 })
+
+        if (result.ok) {
+            const scenarioAction = scenario.actionMappings[actionId]
+            const feedback = scenarioAction?.patientDialogue
+                ?? scenarioAction?.clinicalFinding
+                ?? result.message
+                ?? 'Action completed.'
+            els.feedbackBox.textContent = feedback
+            addLog(`${scenarioAction?.label ?? actionId}${result.site ? ` (${siteLabel(result.site)})` : ''}${typeof result.quality === 'number' ? ` — quality ${result.quality.toFixed(2)}` : ''}`, 'ok')
+        } else {
+            els.feedbackBox.textContent = result.message ?? 'That action could not be completed right now.'
+            addLog(result.message ?? `Action blocked: ${actionId} (${result.outcome})`, 'warn')
+        }
+
+        renderAll()
+    }
+
+    // ── Vitals / rhythm / log ───────────────────────────────────────
+
+    function renderVitals() {
+        if (!model) return
+        els.vitalsGrid.innerHTML = ''
+        const params = model.getDisplayParameters({ includeHidden: false })
+
+        for (const param of params) {
+            if (param.id === 'skinColour') continue
+            const card = document.createElement('div')
+            card.className = 'vital'
+            const value = formatValue(param)
+            const isText = typeof param.value !== 'number'
+            card.innerHTML = `
+                <div class="vital-label">${param.label ?? param.id}</div>
+                <div class="vital-value${isText ? ' is-text' : ''}">${String(value).replace(/_/g, ' ')}</div>
+                <div class="vital-unit">${param.unit ?? ''}</div>`
+            els.vitalsGrid.appendChild(card)
+        }
+    }
+
+    function formatValue(param) {
+        if (param.value === null || param.value === undefined) return '—'
+        if (typeof param.value === 'number') return param.value.toFixed(param.decimals ?? 1)
+        return String(param.value)
+    }
+
+    function renderRhythm() {
+        if (!model) return
+        els.rhythmBadge.style.display = 'inline-flex'
+        const rhythm = model.rhythmState ?? 'unknown'
+        els.rhythmBadge.textContent = rhythm
+        els.rhythmBadge.className = rhythm === 'rosc'
+            ? 'badge badge-green'
+            : rhythm === 'arrest'
+                ? 'badge badge-red'
+                : 'badge badge-blue'
+    }
+
+    function addLog(msg, type = 'msg') {
+        const t = model?.isRunning ? `t=${model._elapsedSeconds()}s` : '—'
+        const e = document.createElement('div')
+        e.className = 'log-entry'
+        e.innerHTML = `<span class="log-t">${t}</span><span class="log-${type}">${escapeHtml(String(msg))}</span>`
+        els.eventLog.appendChild(e)
+        els.eventLog.scrollTop = els.eventLog.scrollHeight
+    }
+
+    function clearLog() {
+        els.eventLog.innerHTML = ''
+    }
+
+    function escapeHtml(str) {
+        return str
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;')
+    }
+</script>
+</body>
+</html>

@@ -263,6 +263,183 @@
       50% { opacity: 0.7; }
     }
 
+    #action-menu-hud {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      /* Same #vitals-hud fix applies here: .ui-overlay sets
+         top:0;left:0;width:100%;height:100%, so top/right/width/height
+         all need an explicit reset or this stretches to fill the gap
+         between the constrained edges instead of shrinking to fit. */
+      top: auto;
+      right: auto;
+      width: 340px;
+      height: auto;
+      max-height: 55vh;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      z-index: 200;
+    }
+
+    #action-menu-hud h3 {
+      font-size: 1.1em;
+      color: #333333;
+      margin-bottom: 12px;
+    }
+
+    .pic-wheel-hint {
+      font-size: 0.75em;
+      color: #888888;
+      margin: -6px 0 12px 0;
+      line-height: 1.4;
+    }
+
+    .pic-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .pic-tab {
+      padding: 6px 11px;
+      border-radius: 20px;
+      border: 1px solid #e0e0e0;
+      background: #f5f5f5;
+      font-size: 0.78em;
+      font-weight: 600;
+      cursor: pointer;
+      color: #555555;
+    }
+
+    .pic-tab.active {
+      background: #4CAF50;
+      border-color: #4CAF50;
+      color: white;
+    }
+
+    .pic-tab.unsafe {
+      border-color: #ef9a9a;
+      color: #c62828;
+    }
+
+    .pic-tab.unsafe.active {
+      background: #c62828;
+      border-color: #c62828;
+      color: white;
+    }
+
+    .pic-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pic-action {
+      padding: 9px 11px;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      background: #f9f9f9;
+      cursor: pointer;
+      font-size: 0.85em;
+    }
+
+    .pic-action:hover:not(.disabled) {
+      background: #eef7ee;
+      border-color: #a5d6a7;
+    }
+
+    .pic-action.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pic-action.dangerous {
+      border-color: #ffcdd2;
+    }
+
+    .pic-action-label {
+      font-weight: 600;
+      color: #333333;
+    }
+
+    .pic-action-reason {
+      font-size: 0.85em;
+      color: #c62828;
+      margin-top: 3px;
+    }
+
+    .pic-action-tag {
+      font-size: 0.72em;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #999999;
+      margin-top: 3px;
+    }
+
+    .pic-subpanel {
+      margin-top: 10px;
+      padding: 11px;
+      border-radius: 6px;
+      border: 1px dashed #cccccc;
+      background: #fafafa;
+      font-size: 0.85em;
+    }
+
+    .pic-subpanel-title {
+      font-weight: 600;
+      color: #333333;
+      margin-bottom: 6px;
+    }
+
+    .pic-capture-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pic-capture-row label {
+      font-size: 0.85em;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .pic-capture-row input {
+      width: 64px;
+      padding: 5px 7px;
+      border-radius: 5px;
+      border: 1px solid #cccccc;
+      font: inherit;
+    }
+
+    .pic-capture-row button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .pic-feedback {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eeeeee;
+      font-size: 0.85em;
+      color: #333333;
+      line-height: 1.4;
+    }
+
     #debrief-overlay {
       display: none;
       flex-direction: column;
@@ -455,6 +632,12 @@
     <div id="vitals-consciousness" class="vitals-row vitals-normal">Consciousness: --%</div>
   </div>
 
+  <div id="action-menu-hud" class="ui-overlay">
+    <h3>ACTIONS</h3>
+    <p class="pic-wheel-hint">Press <strong>E</strong> to preview the WebXR wheel menu (used automatically in VR)</p>
+    <div id="action-menu-content"></div>
+  </div>
+
   <div id="debrief-overlay" class="ui-overlay">
     <div class="debrief-panel">
       <div id="debrief-content"></div>
@@ -469,15 +652,28 @@
     import { Scene } from './vr/Scene.js';
     import { InputHandler } from './vr/InputHandler.js';
     import { UIManager } from './vr/UIManager.js';
+    import { PatientInteractionController } from './vr/PatientInteractionController.js';
+    import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js';
 
     try {
       const scene = new Scene(document.getElementById('canvas-container'));
       const inputHandler = new InputHandler(scene, scene.renderer);
-      const uiManager = new UIManager(scene, inputHandler);
+      const patientInteractionController = new PatientInteractionController(
+        scene,
+        document.getElementById('action-menu-content')
+      );
+      const uiManager = new UIManager(scene, inputHandler, patientInteractionController);
+
+      // VRButton feature-detects on its own (navigator.xr /
+      // isSessionSupported) and renders a disabled "VR NOT SUPPORTED"
+      // button rather than throwing when no headset/browser support is
+      // present, so this is safe to always add.
+      document.body.appendChild(VRButton.createButton(scene.renderer));
 
       window.scene = scene;
       window.uiManager = uiManager;
       window.inputHandler = inputHandler;
+      window.patientInteractionController = patientInteractionController;
 
       console.log('✅ VR Clinical Simulation initialized successfully');
     } catch (error) {

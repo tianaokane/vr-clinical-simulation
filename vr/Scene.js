@@ -4,6 +4,7 @@ import { PatientStateModel } from '../core/PatientStateModel.js';
 import { DialogueEngine } from '../core/DialogueEngine.js';
 import { DebriefingSystem } from '../core/DebriefingSystem.js';
 import { ScenarioLoader } from '../core/ScenarioLoader.js';
+import { InteractionSystem } from '../core/InteractionSystem.js';
 
 export class Scene {
   constructor(containerElement) {
@@ -34,6 +35,13 @@ export class Scene {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(this.width, this.height);
     this.renderer.shadowMap.enabled = true;
+    // WebXR: an immersive session drives its own frame timing, so the
+    // render loop below uses renderer.setAnimationLoop() instead of a
+    // manually-chained requestAnimationFrame -- three.js requires this
+    // to render correctly inside a headset. xr.enabled is harmless to
+    // leave on in browsers/devices without WebXR support at all; no
+    // session ever starts and rendering behaves exactly as before.
+    this.renderer.xr.enabled = true;
     this.container.appendChild(this.renderer.domElement);
 
     // Hallway navigation state
@@ -56,13 +64,16 @@ export class Scene {
       scenarioPicker: null,
       loadingScreen: null,
       vitalsHUD: null,
-      debriefUI: null
+      debriefUI: null,
+      actionMenuHUD: null
     };
 
     // Scenario state
     this.currentScenarioId = null;
     this.psmInstance = null; // PatientStateModel
     this.patientAvatar = null; // VirtualPatient
+    this.interactionSystem = null; // InteractionSystem -- wraps psmInstance, drives PatientInteractionController
+    this.scenarioData = null; // raw scenario JSON, kept for actionMappings lookups (e.g. qualityEffects for capture actions)
     this.debriefData = null;
 
     // Blur effect for debrief
@@ -73,8 +84,10 @@ export class Scene {
     this.setupLighting();
     this.setupWindowResize();
 
-    // Start animation loop
-    this.animate();
+    // Start animation loop. setAnimationLoop (not a manually-chained
+    // requestAnimationFrame) is required so this keeps rendering
+    // correctly once a WebXR session takes over frame timing.
+    this.renderer.setAnimationLoop(this.animate);
 
     // Callback hooks (filled in by external UI manager)
     this.onStateChanged = null;
@@ -129,6 +142,7 @@ export class Scene {
     if (this.uiOverlays.loadingScreen) this.uiOverlays.loadingScreen.style.display = 'none';
     this.setState(this.STATES.PATIENT_ROOM);
     if (this.uiOverlays.vitalsHUD) this.uiOverlays.vitalsHUD.style.display = 'block';
+    if (this.uiOverlays.actionMenuHUD) this.uiOverlays.actionMenuHUD.style.display = 'block';
 
     if (!success) {
       console.error('[Scene] Failed to load scenario');
@@ -149,13 +163,29 @@ export class Scene {
       this.psmInstance.start();
       console.log(`[Scene] PSM initialized and started`);
 
+      // Keep the raw scenario JSON around -- PatientInteractionController
+      // needs actionMappings[...].qualityEffects for capture-type actions
+      // (same lookup interaction-demo.html does), and InteractionSystem
+      // wraps the PSM instance so every front-end (this scene, a future
+      // Quest controller handler) resolves actions the same way.
+      this.scenarioData = scenarioData;
+      this.interactionSystem = new InteractionSystem(this.psmInstance);
+      console.log(`[Scene] InteractionSystem initialized`);
+
       // 3. Create DialogueEngine (manages patient conversations)
       const dialogueData = await this.loadDialogue(scenarioId);
       this.dialogueEngine = new DialogueEngine(dialogueData, this.psmInstance);
       console.log(`[Scene] DialogueEngine initialized`);
 
-      // 4. Create VirtualPatient (3D avatar)
-      this.patientAvatar = new VirtualPatient(this, scenarioId);
+      // 4. Create VirtualPatient (3D avatar). Dispose any previous one
+      // first -- retrying a scenario (onDebriefRetry) calls back into
+      // this method without going through the board's cleanup path, so
+      // without this the old body/anchors would stay in the scene
+      // underneath the new one.
+      if (this.patientAvatar) {
+        this.patientAvatar.dispose();
+      }
+      this.patientAvatar = new VirtualPatient(this, scenarioId, scenarioData);
       console.log(`[Scene] VirtualPatient instantiated`);
 
       // 5. Wire PSM state changes to patient avatar visuals
@@ -259,6 +289,7 @@ export class Scene {
   transitionToDebriefView() {
     // Hide vitals HUD, show debrief UI with blur effect
     if (this.uiOverlays.vitalsHUD) this.uiOverlays.vitalsHUD.style.display = 'none';
+    if (this.uiOverlays.actionMenuHUD) this.uiOverlays.actionMenuHUD.style.display = 'none';
 
     // Turn camera 90° to the side
     this.debriefTurnProgress = 0;
@@ -531,7 +562,9 @@ export class Scene {
   // ═══════════════════════════════════════════════════════════════════════════
 
   animate = () => {
-    requestAnimationFrame(this.animate);
+    // Driven by renderer.setAnimationLoop() now (see constructor) --
+    // no self-chained requestAnimationFrame here, since the XR session
+    // (when active) owns frame timing instead.
 
     // Update based on state
     if (this.state === this.STATES.HALLWAY_DOWN || this.state === this.STATES.HALLWAY_UP) {
@@ -573,6 +606,7 @@ export class Scene {
   // ═══════════════════════════════════════════════════════════════════════════
 
   dispose() {
+    this.renderer.setAnimationLoop(null);
     this.renderer.dispose();
     this.scene.clear();
   }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0-clinical",
   "scenarioId": "sepsis-adult",
-  "scenarioName": "Sepsis \u2014 Adult",
+  "scenarioName": "Sepsis — Adult",
   "description": "An adult patient presents to the emergency department with suspected infection and early signs of sepsis. They are febrile, tachycardic, tachypnoeic, mildly hypoxic, confused, and at risk of deterioration into septic shock. This scenario trains recognition of sepsis, ABCDE assessment, NEWS2-style concern, monitoring, escalation, oxygen, IV access, lactate/blood cultures, antibiotics and fluids within local policy, urine output monitoring, reassessment, and structured handover.",
   "clinicalContext": {
     "setting": "emergency-department-assessment-bay",
@@ -146,6 +146,7 @@
     "confirmIdentityAndIntroduceSelf": {
       "label": "Confirm Identity / Introduce Self",
       "group": "Initial approach",
+      "category": "Assessment",
       "instruction": "Introduce yourself, confirm identity if possible, explain that you are going to assess her urgently, and reassure the patient/family.",
       "sequence": 1,
       "completionOnly": true,
@@ -169,6 +170,7 @@
     "startABCDE": {
       "label": "Start ABCDE Assessment",
       "group": "ABCDE",
+      "category": "Assessment",
       "instruction": "Begin a structured ABCDE assessment and call for help if the patient appears seriously unwell.",
       "sequence": 2,
       "setsState": {
@@ -182,8 +184,9 @@
       "learnerFeedback": "ABCDE prevents missing life-threatening deterioration."
     },
     "assessAirway": {
-      "label": "A \u2014 Assess Airway",
+      "label": "A — Assess Airway",
       "group": "ABCDE",
+      "category": "Airway",
       "instruction": "Check whether the patient can speak and maintain her airway.",
       "sequence": 3,
       "setsState": {
@@ -198,8 +201,9 @@
       "patientDialogue": "I can talk... I'm just so tired."
     },
     "assessBreathing": {
-      "label": "B \u2014 Assess Breathing",
+      "label": "B — Assess Breathing",
       "group": "ABCDE",
+      "category": "Breathing",
       "instruction": "Assess respiratory rate, work of breathing, chest expansion, auscultation if available, and SpO2.",
       "sequence": 4,
       "setsState": {
@@ -216,6 +220,8 @@
     "attachMonitoring": {
       "label": "Attach ED Monitoring",
       "group": "Monitoring",
+      "category": "Monitoring",
+      "toolId": "ecg-leads",
       "instruction": "Attach pulse oximeter, BP cuff, ECG leads, and start repeated observations.",
       "sequence": 5,
       "setsState": {
@@ -231,12 +237,14 @@
         "updateAverageQualityAs": "averageActionQuality",
         "averageCountAs": "actionQualitySampleCount"
       },
-      "clinicalFinding": "Initial observations: HR 118, BP 98 systolic, RR 28, SpO2 92%, temperature 39.1\u00b0C, confused.",
+      "clinicalFinding": "Initial observations: HR 118, BP 98 systolic, RR 28, SpO2 92%, temperature 39.1°C, confused.",
       "learnerFeedback": "Monitoring allows early recognition of sepsis deterioration and response to treatment."
     },
     "applyOxygenIfHypoxic": {
       "label": "Give Oxygen if Hypoxic",
       "group": "Breathing",
+      "category": "Breathing",
+      "toolId": "oxygen-mask",
       "instruction": "Apply oxygen if hypoxic or significantly unwell, then titrate according to local oxygen targets and policy.",
       "sequence": 6,
       "requiresState": {},
@@ -261,8 +269,9 @@
       "learnerFeedback": "Oxygen supports hypoxia but does not treat the underlying infection."
     },
     "assessCirculation": {
-      "label": "C \u2014 Assess Circulation",
+      "label": "C — Assess Circulation",
       "group": "ABCDE",
+      "category": "Circulation",
       "instruction": "Assess pulse, BP, capillary refill, skin signs, perfusion, dehydration, and signs of shock.",
       "sequence": 7,
       "setsState": {
@@ -278,8 +287,9 @@
       "learnerFeedback": "Hypotension, delayed capillary refill, tachycardia, and low urine output suggest impaired perfusion."
     },
     "assessDisabilityGlucose": {
-      "label": "D \u2014 Assess Disability / Glucose",
+      "label": "D — Assess Disability / Glucose",
       "group": "ABCDE",
+      "category": "Disability",
       "instruction": "Assess AVPU/GCS, new confusion, pupils if relevant, glucose, and pain/discomfort.",
       "sequence": 8,
       "setsState": {
@@ -297,8 +307,9 @@
       "learnerFeedback": "New confusion is a high-risk sign in suspected sepsis. Glucose check helps exclude hypoglycaemia."
     },
     "exposeAndCheckSource": {
-      "label": "E \u2014 Exposure / Infection Source",
+      "label": "E — Exposure / Infection Source",
       "group": "ABCDE",
+      "category": "Exposure",
       "instruction": "Check temperature, look for infection source, rash, wounds, lines, urinary/abdominal/respiratory signs, while maintaining dignity and warmth.",
       "sequence": 9,
       "setsState": {
@@ -312,12 +323,13 @@
         "updateAverageQualityAs": "averageActionQuality",
         "averageCountAs": "actionQualitySampleCount"
       },
-      "clinicalFinding": "Temperature 39.1\u00b0C. Productive cough and right basal crackles suggest chest infection/pneumonia. No non-blanching rash seen.",
+      "clinicalFinding": "Temperature 39.1°C. Productive cough and right basal crackles suggest chest infection/pneumonia. No non-blanching rash seen.",
       "learnerFeedback": "Exposure should seek infection source while avoiding unnecessary cooling or loss of dignity."
     },
     "recogniseSepsis": {
       "label": "Recognise Suspected Sepsis",
       "group": "Recognition",
+      "category": "Recognition",
       "instruction": "Identify suspected sepsis from infection plus abnormal observations: RR 28, HR 118, systolic BP 98, confusion, fever, hypoxia, low urine output.",
       "sequence": 10,
       "requiresState": {
@@ -340,6 +352,7 @@
     "callSeniorSepsisHelp": {
       "label": "Call Senior / Sepsis Escalation",
       "group": "Escalation",
+      "category": "Escalation",
       "instruction": "Escalate to senior ED/medical team and activate local sepsis pathway due to suspected high-risk sepsis.",
       "sequence": 11,
       "requiresState": {},
@@ -359,6 +372,12 @@
     "establishIVAccess": {
       "label": "Establish IV Access",
       "group": "Circulation / Sepsis care",
+      "category": "Circulation",
+      "validSites": [
+        "leftArm",
+        "rightArm"
+      ],
+      "toolId": "iv-cannula",
       "instruction": "Establish IV access within role/local policy, or request urgent help to do so.",
       "sequence": 12,
       "setsState": {
@@ -375,6 +394,8 @@
     "sendBloodsAndLactate": {
       "label": "Send Bloods / Check Lactate",
       "group": "Circulation / Sepsis care",
+      "category": "Circulation",
+      "toolId": "blood-tubes",
       "instruction": "Send sepsis bloods and check lactate according to local pathway.",
       "sequence": 13,
       "requiresState": {
@@ -395,6 +416,8 @@
     "takeBloodCultures": {
       "label": "Take Blood Cultures",
       "group": "Circulation / Sepsis care",
+      "category": "Circulation",
+      "toolId": "blood-culture-bottle",
       "instruction": "Take blood cultures before antibiotics where this can be done without causing harmful delay.",
       "sequence": 14,
       "requiresState": {},
@@ -412,6 +435,7 @@
     "requestAntibiotics": {
       "label": "Request IV Antibiotics",
       "group": "Antibiotics",
+      "category": "Medications",
       "instruction": "Request appropriate broad-spectrum IV antibiotics according to local policy, allergies, and prescribing authority.",
       "sequence": 15,
       "requiresState": {
@@ -431,6 +455,8 @@
     "administerAntibioticsAsPrescribed": {
       "label": "Administer Antibiotics as Prescribed",
       "group": "Antibiotics",
+      "category": "Medications",
+      "toolId": "syringe",
       "instruction": "Administer prescribed/approved IV antibiotics promptly, according to role and local policy.",
       "sequence": 16,
       "requiresState": {
@@ -454,6 +480,7 @@
     "prepareFluidBolus": {
       "label": "Prepare IV Fluids for Hypotension",
       "group": "Fluids / perfusion",
+      "category": "Circulation",
       "instruction": "Prepare IV fluids for hypotension, elevated lactate, or signs of shock according to local policy.",
       "sequence": 17,
       "requiresState": {
@@ -473,6 +500,8 @@
     "giveIVFluidsAsPrescribed": {
       "label": "Give IV Fluids as Prescribed",
       "group": "Fluids / perfusion",
+      "category": "Circulation",
+      "toolId": "iv-bag",
       "instruction": "Give IV fluids as prescribed/approved and monitor for response and overload risk.",
       "sequence": 18,
       "requiresState": {
@@ -502,6 +531,8 @@
     "monitorUrineOutput": {
       "label": "Monitor Urine Output",
       "group": "Monitoring",
+      "category": "Monitoring",
+      "toolId": "catheter",
       "instruction": "Start urine output monitoring and consider catheterisation according to local policy if accurate measurement is needed.",
       "sequence": 19,
       "setsState": {
@@ -519,6 +550,7 @@
     "reassessAfterTreatment": {
       "label": "Reassess Observations and Response",
       "group": "Reassessment",
+      "category": "Reassessment",
       "instruction": "Reassess ABCDE, observations, oxygen requirement, BP response, mental state, lactate concern, urine output, and need for critical care.",
       "sequence": 20,
       "requiresState": {
@@ -540,6 +572,7 @@
     "considerCriticalCareIfPoorResponse": {
       "label": "Consider Critical Care Escalation",
       "group": "Escalation",
+      "category": "Escalation",
       "instruction": "If hypotension, high lactate, hypoxia, or reduced consciousness persist despite initial care, consider critical care escalation.",
       "sequence": 21,
       "requiresState": {},
@@ -557,6 +590,7 @@
     "prepareClinicalHandover": {
       "label": "Prepare SBAR / Sepsis Handover",
       "group": "Handover",
+      "category": "Handover",
       "instruction": "Prepare SBAR handover including suspected source, observations, NEWS2 concern, lactate, cultures, antibiotics, fluids, urine output, response, and ongoing risks.",
       "sequence": 22,
       "completionOnly": true,
@@ -573,6 +607,7 @@
     "observeOnly": {
       "label": "Observe Only / Wait",
       "group": "Unsafe actions",
+      "category": "Unsafe",
       "instruction": "Unsafe test action: waiting without escalation or treatment can allow sepsis to progress.",
       "dangerousTestAction": true,
       "sequence": 90,
@@ -601,6 +636,7 @@
     "delayAntibiotics": {
       "label": "Delay Antibiotics",
       "group": "Unsafe actions",
+      "category": "Unsafe",
       "instruction": "Unsafe test action: delaying antibiotics in high-risk suspected sepsis can worsen outcomes.",
       "dangerousTestAction": true,
       "sequence": 91,
@@ -628,6 +664,7 @@
     "giveOralFluidsOnly": {
       "label": "Give Oral Fluids Only",
       "group": "Unsafe actions",
+      "category": "Unsafe",
       "instruction": "Unsafe test action: oral fluids alone are not adequate for hypotensive high-risk suspected sepsis.",
       "dangerousTestAction": true,
       "sequence": 92,
@@ -649,6 +686,7 @@
     "dischargeAsViralIllness": {
       "label": "Discharge / Reassure as Viral Illness",
       "group": "Unsafe actions",
+      "category": "Unsafe",
       "instruction": "Unsafe test action: discharging a confused, hypotensive, tachypnoeic patient with suspected infection is unsafe.",
       "dangerousTestAction": true,
       "sequence": 93,
@@ -677,6 +715,7 @@
     "giveAntibioticsBeforeCulturesWhenCulturesFeasible": {
       "label": "Give Antibiotics Before Cultures When Cultures Feasible",
       "group": "Unsafe actions",
+      "category": "Unsafe",
       "instruction": "Unsafe test action: if cultures can be taken immediately without delaying antibiotics, missing them reduces diagnostic value.",
       "dangerousTestAction": true,
       "sequence": 94,
@@ -696,6 +735,7 @@
     "leaveFlatWhileBreathless": {
       "label": "Leave Patient Flat While Breathless",
       "group": "Unsafe actions",
+      "category": "Unsafe",
       "instruction": "Unsafe test action: leaving a breathless patient flat can worsen respiratory distress.",
       "dangerousTestAction": true,
       "sequence": 95,
@@ -779,7 +819,7 @@
       "min": 70,
       "max": 100,
       "unit": "%",
-      "label": "SpO\u2082",
+      "label": "SpO₂",
       "meaning": "Hypoxia may reflect pneumonia, sepsis, respiratory fatigue, or poor perfusion.",
       "learnerVisible": true
     },
@@ -802,7 +842,7 @@
       "criticalAbove": 40.0,
       "min": 32,
       "max": 42,
-      "unit": "\u00b0C",
+      "unit": "°C",
       "label": "Temperature",
       "meaning": "Fever or hypothermia can occur in sepsis. A normal temperature does not exclude sepsis.",
       "learnerVisible": true
@@ -1205,7 +1245,7 @@
   "scenarioEndConditions": {
     "septicShockDeterioration": {
       "type": "failure",
-      "title": "Patient Deteriorated \u2014 Septic Shock",
+      "title": "Patient Deteriorated — Septic Shock",
       "priority": 1,
       "requiresAny": [
         {

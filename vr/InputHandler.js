@@ -111,14 +111,17 @@ export class InputHandler {
   }
 
   onMouseDown(event) {
-    // Only request pointer lock during scenario (PATIENT_ROOM state)
-    // Don't lock pointer during menus/navigation
-    if (this.scene.state === this.scene.STATES.PATIENT_ROOM && !this.mouse.isLocked) {
-      this.renderer.domElement.requestPointerLock =
-        this.renderer.domElement.requestPointerLock ||
-        this.renderer.domElement.mozRequestPointerLock;
-      this.renderer.domElement.requestPointerLock();
-    }
+    // Pointer lock (FPS-style mouselook) is intentionally NOT auto-engaged
+    // here anymore. It used to request on the first click in PATIENT_ROOM,
+    // but that's exactly where the interaction system now lives
+    // (PatientInteractionController: category -> action -> site, see
+    // core/InteractionSystem.js) -- its whole model is point-and-click with
+    // a normal, visible cursor. Locking the pointer on the first click
+    // would hide the cursor and break every menu/anchor click after it.
+    // The room's camera is a fixed vantage point set at scenario load
+    // (Scene.loadScenario), so nothing currently depends on mouselook
+    // here. Re-add it behind its own explicit toggle if free look becomes
+    // a real requirement later, rather than any click in the room.
   }
 
   onMouseUp(event) {

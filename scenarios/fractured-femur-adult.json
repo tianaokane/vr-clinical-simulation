@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0-clinical",
   "scenarioId": "fractured-femur-adult",
-  "scenarioName": "Fractured Femur \u2014 Adult",
+  "scenarioName": "Fractured Femur — Adult",
   "description": "An adult trauma patient arrives in the emergency department after a high-energy fall with a suspected femoral shaft fracture. They are conscious, distressed, and in severe pain with visible thigh deformity and early signs of blood loss. This scenario trains initial ED trauma assessment using ABCDE, monitoring, analgesia escalation, neurovascular limb assessment, safe limb handling, shock recognition, senior/orthopaedic escalation, imaging preparation, and structured handover.",
   "clinicalContext": {
     "setting": "emergency-department-trauma-bay",
@@ -143,6 +143,7 @@
     "confirmIdentityAndIntroduceSelf": {
       "label": "Confirm Identity / Introduce Self",
       "group": "Initial approach",
+      "category": "Assessment",
       "instruction": "Introduce yourself, confirm identity if possible, and explain that you will avoid unnecessary leg movement.",
       "sequence": 1,
       "completionOnly": true,
@@ -167,6 +168,7 @@
     "startABCDE": {
       "label": "Start ABCDE Assessment",
       "group": "ABCDE",
+      "category": "Assessment",
       "instruction": "Begin a structured ABCDE assessment before focusing only on the leg.",
       "sequence": 2,
       "setsState": {
@@ -180,8 +182,9 @@
       }
     },
     "assessAirwayCSpine": {
-      "label": "A \u2014 Assess Airway / Consider C-Spine",
+      "label": "A — Assess Airway / Consider C-Spine",
       "group": "ABCDE",
+      "category": "Airway",
       "instruction": "Check speech/airway and consider C-spine precautions for the mechanism.",
       "sequence": 3,
       "setsState": {
@@ -197,8 +200,9 @@
       }
     },
     "assessBreathing": {
-      "label": "B \u2014 Assess Breathing",
+      "label": "B — Assess Breathing",
       "group": "ABCDE",
+      "category": "Breathing",
       "instruction": "Assess RR, work of breathing, chest signs, and SpO2.",
       "sequence": 4,
       "setsState": {
@@ -213,6 +217,8 @@
     "attachMonitoring": {
       "label": "Attach ED Monitoring",
       "group": "Monitoring",
+      "category": "Monitoring",
+      "toolId": "ecg-leads",
       "instruction": "Attach pulse oximeter, BP cuff, ECG leads, and start repeated observations.",
       "sequence": 5,
       "setsState": {
@@ -232,8 +238,9 @@
       "learnerFeedback": "Monitoring allows trend recognition."
     },
     "assessCirculationBleeding": {
-      "label": "C \u2014 Assess Circulation / Bleeding",
+      "label": "C — Assess Circulation / Bleeding",
       "group": "ABCDE",
+      "category": "Circulation",
       "instruction": "Assess pulse, BP, capillary refill, skin signs, major external bleeding, and shock risk.",
       "sequence": 6,
       "setsState": {
@@ -250,6 +257,12 @@
     "establishIVAccess": {
       "label": "Establish IV Access",
       "group": "Circulation / escalation",
+      "category": "Circulation",
+      "validSites": [
+        "leftArm",
+        "rightArm"
+      ],
+      "toolId": "iv-cannula",
       "instruction": "Establish IV access within role/local policy, or request help to do so.",
       "sequence": 7,
       "setsState": {
@@ -265,6 +278,8 @@
     "sendBloodsGroupAndSave": {
       "label": "Send Bloods / Group and Save",
       "group": "Circulation / escalation",
+      "category": "Circulation",
+      "toolId": "blood-tubes",
       "instruction": "Send trauma bloods and request group-and-save/crossmatch according to policy.",
       "sequence": 8,
       "requiresState": {
@@ -282,8 +297,9 @@
       }
     },
     "assessDisabilityPain": {
-      "label": "D \u2014 Assess Disability / Pain",
+      "label": "D — Assess Disability / Pain",
       "group": "ABCDE",
+      "category": "Disability",
       "instruction": "Assess AVPU/GCS, pain score, nausea, and neurological symptoms.",
       "sequence": 9,
       "setsState": {
@@ -300,6 +316,7 @@
     "requestAnalgesia": {
       "label": "Request Appropriate Analgesia",
       "group": "Pain management",
+      "category": "Medications",
       "instruction": "Request appropriate strong analgesia according to role and local policy.",
       "sequence": 10,
       "setsState": {
@@ -315,6 +332,8 @@
     "administerAnalgesiaAsPrescribed": {
       "label": "Administer Analgesia as Prescribed",
       "group": "Pain management",
+      "category": "Medications",
+      "toolId": "syringe",
       "instruction": "Administer prescribed/approved analgesia and monitor response, sedation, RR, BP, and nausea.",
       "sequence": 11,
       "requiresState": {
@@ -339,8 +358,9 @@
       "learnerFeedback": "Analgesia reduces distress but does not fix the fracture."
     },
     "exposeAndInspectInjury": {
-      "label": "E \u2014 Expose and Inspect Injury",
+      "label": "E — Expose and Inspect Injury",
       "group": "ABCDE",
+      "category": "Exposure",
       "instruction": "Expose enough to inspect while maintaining dignity and preventing hypothermia. Do not lift or straighten the limb.",
       "sequence": 12,
       "setsState": {
@@ -358,6 +378,10 @@
     "checkDistalPulse": {
       "label": "Check Distal Pulse",
       "group": "Neurovascular checks",
+      "category": "Circulation",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Assess distal circulation/sensation/movement without moving the injured leg.",
       "sequence": 13,
       "setsState": {
@@ -373,6 +397,10 @@
     "checkCapillaryRefill": {
       "label": "Check Capillary Refill",
       "group": "Neurovascular checks",
+      "category": "Circulation",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Assess distal circulation/sensation/movement without moving the injured leg.",
       "sequence": 14,
       "setsState": {
@@ -387,6 +415,10 @@
     "checkSensation": {
       "label": "Check Foot Sensation",
       "group": "Neurovascular checks",
+      "category": "Circulation",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Assess distal circulation/sensation/movement without moving the injured leg.",
       "sequence": 15,
       "setsState": {
@@ -402,6 +434,10 @@
     "checkToeMovement": {
       "label": "Check Toe Movement",
       "group": "Neurovascular checks",
+      "category": "Circulation",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Assess distal circulation/sensation/movement without moving the injured leg.",
       "sequence": 16,
       "setsState": {
@@ -419,6 +455,7 @@
     "callSeniorTraumaHelp": {
       "label": "Call Senior / Trauma Team",
       "group": "Escalation",
+      "category": "Escalation",
       "instruction": "Escalate: suspected femur fracture, severe pain, tachycardia, possible internal blood loss, weak distal pulse.",
       "sequence": 17,
       "completionOnly": true,
@@ -437,6 +474,11 @@
     "supportLimbInPositionFound": {
       "label": "Support Limb in Position Found",
       "group": "Stabilisation",
+      "category": "Stabilisation",
+      "validSites": [
+        "injuredLeg"
+      ],
+      "toolId": "splint",
       "instruction": "Support the injured leg exactly as found using pillows/foam/rolled blankets. Do not straighten it.",
       "sequence": 18,
       "setsState": {
@@ -463,6 +505,11 @@
     "immobiliseAndPad": {
       "label": "Immobilise / Pad Around Limb",
       "group": "Stabilisation",
+      "category": "Stabilisation",
+      "validSites": [
+        "injuredLeg"
+      ],
+      "toolId": "splint",
       "instruction": "Immobilise/pad around the injured leg while keeping the foot accessible for repeat neurovascular checks.",
       "sequence": 19,
       "requiresState": {
@@ -490,6 +537,10 @@
     "repeatDistalCSMAfterImmobilisation": {
       "label": "Repeat Distal CSM After Immobilisation",
       "group": "Neurovascular checks",
+      "category": "Circulation",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Repeat distal pulse, cap refill, sensation, and toe movement after immobilisation.",
       "sequence": 20,
       "requiresState": {
@@ -508,6 +559,7 @@
     "prepareShockEscalation": {
       "label": "Prepare Shock Escalation",
       "group": "Circulation / escalation",
+      "category": "Circulation",
       "instruction": "Escalate possible haemorrhagic shock and prepare fluids/blood products according to local policy.",
       "sequence": 21,
       "requiresState": {
@@ -531,6 +583,7 @@
     "requestXrayAndOrthoReferral": {
       "label": "Request Imaging / Orthopaedics",
       "group": "Definitive care preparation",
+      "category": "Definitive care",
       "instruction": "After stabilisation, request appropriate X-ray/imaging and contact orthopaedics.",
       "sequence": 22,
       "requiresState": {
@@ -552,6 +605,7 @@
     "reassessPainAndVitals": {
       "label": "Reassess Pain and Vitals",
       "group": "Reassessment",
+      "category": "Reassessment",
       "instruction": "Reassess pain, sedation, RR, SpO2, HR, BP, consciousness, skin signs, and distal CSM trends.",
       "sequence": 23,
       "completionOnly": true,
@@ -569,6 +623,7 @@
     "prepareClinicalHandover": {
       "label": "Prepare SBAR / ATMIST Handover",
       "group": "Handover",
+      "category": "Handover",
       "instruction": "Prepare SBAR/ATMIST including mechanism, injury, observations, neurovascular status, pain management, immobilisation, escalation, and concerns.",
       "sequence": 24,
       "completionOnly": true,
@@ -584,6 +639,10 @@
     "moveLeg": {
       "label": "Move Injured Leg",
       "group": "Unsafe actions",
+      "category": "Unsafe",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Unsafe test action: moving the injured leg can worsen pain, bleeding, and tissue damage.",
       "dangerousTestAction": true,
       "sequence": 90,
@@ -612,6 +671,10 @@
     "straightenLeg": {
       "label": "Straighten Injured Leg",
       "group": "Unsafe actions",
+      "category": "Unsafe",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Unsafe test action: do not straighten a deformed suspected femur fracture.",
       "dangerousTestAction": true,
       "sequence": 91,
@@ -641,10 +704,14 @@
     "askPatientToStand": {
       "label": "Ask Patient to Stand",
       "group": "Unsafe actions",
+      "category": "Unsafe",
+      "validSites": [
+        "injuredLeg"
+      ],
       "instruction": "Unsafe test action: do not ask the patient to weight-bear on a suspected femur fracture.",
       "dangerousTestAction": true,
       "sequence": 92,
-      "patientDialogue": "I can't stand \u2014 my leg feels wrong!",
+      "patientDialogue": "I can't stand — my leg feels wrong!",
       "setsState": {
         "askedToStand": true,
         "unsafeMovementOccurred": true,
@@ -668,10 +735,15 @@
     "applyTightThighBandage": {
       "label": "Apply Tight Bandage Over Thigh",
       "group": "Unsafe actions",
+      "category": "Unsafe",
+      "validSites": [
+        "injuredLeg"
+      ],
+      "toolId": "bandage",
       "instruction": "Unsafe test action: do not apply tight circumferential pressure over a closed deformed thigh without a clear external bleed.",
       "dangerousTestAction": true,
       "sequence": 93,
-      "patientDialogue": "That's too tight \u2014 my foot feels colder!",
+      "patientDialogue": "That's too tight — my foot feels colder!",
       "setsState": {
         "tightBandageApplied": true,
         "repeatedUnsafeLimbHandlingOccurred": false
@@ -693,6 +765,7 @@
     "giveFoodOrDrink": {
       "label": "Give Food or Drink",
       "group": "Unsafe actions",
+      "category": "Unsafe",
       "instruction": "Unsafe test action: avoid food or drink because the patient may need surgery, sedation, or urgent procedures.",
       "dangerousTestAction": true,
       "sequence": 94,
@@ -774,7 +847,7 @@
       "min": 70,
       "max": 100,
       "unit": "%",
-      "label": "SpO\u2082",
+      "label": "SpO₂",
       "meaning": "Usually initially normal in isolated femur fracture, but may fall with deterioration or poor perfusion.",
       "learnerVisible": true
     },
@@ -809,7 +882,7 @@
       "criticalAbove": 39.5,
       "min": 32,
       "max": 42,
-      "unit": "\u00b0C",
+      "unit": "°C",
       "label": "Temperature",
       "meaning": "Trauma patients can cool quickly when lying still on the ground.",
       "learnerVisible": true

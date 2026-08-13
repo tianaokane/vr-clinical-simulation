@@ -469,6 +469,7 @@
     "checkResponse": {
       "label": "Check Response",
       "group": "Assessment",
+      "category": "Assessment",
       "instruction": "Shout clearly and tap both shoulders: 'Are you alright?'",
       "completionOnly": true,
       "sequence": 1,
@@ -478,6 +479,7 @@
     "callCrashTeam": {
       "label": "Call Crash Team",
       "group": "Call for help",
+      "category": "Escalation",
       "instruction": "Call 2222. State location, patient sex/age if known, and 'cardiac arrest'. Ask for AED/defibrillator.",
       "completionOnly": true,
       "sequence": 2,
@@ -487,6 +489,7 @@
     "openAirway": {
       "label": "Open Airway",
       "group": "Assessment",
+      "category": "Airway",
       "instruction": "Use head tilt-chin lift unless trauma is suspected. Look for obvious airway obstruction.",
       "sequence": 3,
       "setsState": {
@@ -501,6 +504,7 @@
     "checkBreathing": {
       "label": "Check Breathing",
       "group": "Assessment",
+      "category": "Breathing",
       "instruction": "Look, listen, and feel for normal breathing for no more than 10 seconds.",
       "completionOnly": true,
       "sequence": 4,
@@ -513,6 +517,8 @@
     "attachPulseOx": {
       "label": "Attach Pulse Oximeter",
       "group": "Monitoring",
+      "category": "Circulation",
+      "toolId": "pulse-oximeter",
       "instruction": "Attach pulse oximeter probe to finger if available, but do not delay CPR.",
       "sequence": 5,
       "setsState": {
@@ -528,6 +534,8 @@
     "cprCompressions": {
       "label": "CPR Compressions",
       "group": "CPR / ventilation",
+      "category": "Circulation",
+      "captureType": "compression-rate-depth",
       "instruction": "Start chest compressions. Centre/lower half of sternum, arms straight, shoulders over chest, 100-120/min, 5-6 cm depth, full recoil.",
       "sequence": 6,
       "preconditions": {
@@ -578,6 +586,7 @@
     "rescueBreaths": {
       "label": "Rescue Breaths",
       "group": "CPR / ventilation",
+      "category": "Breathing",
       "instruction": "Give 2 rescue breaths after 30 compressions if trained and able. Open airway, seal mouth, breathe just enough to see chest rise.",
       "sequence": 7,
       "preconditions": {
@@ -602,6 +611,8 @@
     "applyAEDPads": {
       "label": "Apply AED Pads",
       "group": "Defibrillation",
+      "category": "Circulation",
+      "toolId": "aed-pads",
       "instruction": "Apply pads: one below right clavicle, one left lateral chest. Continue CPR while pads are applied if possible.",
       "sequence": 8,
       "oneShot": true,
@@ -624,6 +635,7 @@
     "shockIfAdvised": {
       "label": "Deliver Shock if Advised",
       "group": "Defibrillation",
+      "category": "Circulation",
       "instruction": "Ensure everyone is clear. Deliver shock if advised. Resume CPR immediately after shock.",
       "sequence": 9,
       "preconditions": {
@@ -676,6 +688,8 @@
     "continueCPRAfterShock": {
       "label": "Resume CPR After Shock",
       "group": "CPR / ventilation",
+      "category": "Circulation",
+      "captureType": "compression-rate-depth",
       "instruction": "Immediately resume chest compressions after shock. Do not pause for a pulse check unless clear signs of ROSC appear.",
       "sequence": 10,
       "preconditions": {
@@ -747,6 +761,8 @@
     "oxygenTherapy": {
       "label": "Oxygen Therapy",
       "group": "Post-ROSC care",
+      "category": "Breathing",
+      "toolId": "oxygen-mask",
       "instruction": "After ROSC, apply high-concentration oxygen initially. Once SpO2 is reliable, titrate oxygen to target 94-98%.",
       "sequence": 11,
       "preconditions": {
@@ -783,6 +799,8 @@
     "attachBPCuff": {
       "label": "Attach BP Cuff",
       "group": "Monitoring",
+      "category": "Circulation",
+      "toolId": "bp-cuff",
       "instruction": "Attach non-invasive BP cuff for post-ROSC monitoring.",
       "sequence": 12,
       "setsState": {
@@ -802,6 +820,7 @@
     "recoveryPosition": {
       "label": "Recovery Position",
       "group": "Post-ROSC care",
+      "category": "Stabilisation",
       "instruction": "Optional: if the patient has ROSC, is breathing adequately, and there is no major trauma concern, place in the recovery position while maintaining airway and monitoring.",
       "sequence": 13,
       "completionOnly": true,
@@ -821,6 +840,7 @@
     "monitorVitals": {
       "label": "Monitor Vitals",
       "group": "Monitoring",
+      "category": "Monitoring",
       "instruction": "Continue monitoring ECG/rhythm, pulse, breathing, SpO2 signal quality, BP, consciousness, and prepare handover.",
       "sequence": 14,
       "completionOnly": true,
