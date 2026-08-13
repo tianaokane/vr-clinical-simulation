@@ -142,7 +142,7 @@
     "timeWithoutMonitoring": 0,
     "timeWithoutOxygen": 0
   },
-  "actions": {
+  "actionMappings": {
     "confirmIdentityAndIntroduceSelf": {
       "label": "Confirm Identity / Introduce Self",
       "group": "Initial approach",

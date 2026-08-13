@@ -139,7 +139,7 @@
     "repeatedUnsafeLimbHandlingOccurred": false,
     "poorQualityCareFlag": false
   },
-  "actions": {
+  "actionMappings": {
     "confirmIdentityAndIntroduceSelf": {
       "label": "Confirm Identity / Introduce Self",
       "group": "Initial approach",

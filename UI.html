@@ -206,6 +206,18 @@
       position: fixed;
       top: 20px;
       right: 20px;
+      /* #vitals-hud shares the .ui-overlay class (for hideAll()/show* toggling
+         in UIManager.js), which sets left:0; top:0; width:100%; height:100%.
+         This rule overrides top/width/height, but left:0 was still being
+         inherited from .ui-overlay. With left:0 AND right:20px both
+         constrained and width left at auto, the CSS spec makes the browser
+         stretch width to fill the gap between them — so the HUD was
+         rendering as a near-fullscreen box instead of a small corner panel,
+         hiding the patient behind it. Explicitly reset left too so only
+         `right` constrains the box and width can shrink-to-fit. */
+      left: auto;
+      width: auto;
+      height: auto;
       background: rgba(255, 255, 255, 0.95);
       border-radius: 8px;
       padding: 20px;

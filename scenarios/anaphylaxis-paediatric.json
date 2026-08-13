@@ -144,7 +144,7 @@
     "symptomImprovementConfirmed": false,
     "airwayBreathingImproved": false
   },
-  "actions": {
+  "actionMappings": {
     "confirmIdentityEngageParent": {
       "label": "Confirm Identity / Engage Parent",
       "group": "Initial approach",

@@ -5,7 +5,7 @@
 
 export class ActionClassifier {
   constructor(scenarioActions = {}, scenarioId = "cardiac-arrest-adult") {
-    // scenarioActions is the "actions" object from the scenario JSON.
+    // scenarioActions is the "actionMappings" object from the scenario JSON.
     // Each action has label, instruction, preconditions, setsState, effects, etc.
     this.scenarioActions = scenarioActions;
     this.scenarioId = scenarioId;

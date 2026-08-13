@@ -2,7 +2,8 @@
 // Runs a cardiac arrest scenario and generates a full debrief report.
 // Shows how DebriefingSystem analyzes performance and provides learning feedback.
 
-import { ScenarioLoader } from "../core/ScenarioLoader.js";
+import { loadScenarioSync, loadDialogueSync } from "./testHelpers.js";
+import { PatientStateModel } from "../core/PatientStateModel.js";
 import { ActionClassifier } from "../core/ActionClassifier.js";
 import { DialogueEngine } from "../core/DialogueEngine.js";
 import { DebriefingSystem } from "../core/DebriefingSystem.js";
@@ -12,14 +13,15 @@ async function runDebriefTest() {
 
   // Load scenario
   console.log("Loading scenario...");
-  const loader = new ScenarioLoader("./scenarios", "./dialogue");
-  const { scenario, dialogue, psm } = await loader.load("cardiac-arrest-adult");
+  const scenario = loadScenarioSync("cardiac-arrest-adult");
+  const psm = new PatientStateModel(scenario);
+  const dialogue = loadDialogueSync("cardiac-arrest-adult");
 
   console.log(`Scenario: ${scenario.scenarioName}\n`);
 
   // Initialize systems
-  const dialogueEngine = new DialogueEngine(dialogue);
-  const actionClassifier = new ActionClassifier(scenario.actions);
+  const dialogueEngine = new DialogueEngine(dialogue, psm);
+  const actionClassifier = new ActionClassifier(scenario.actionMappings);
   const debriefingSystem = new DebriefingSystem(scenario);
 
   // Track action log for debrief
@@ -96,7 +98,7 @@ async function runDebriefTest() {
   console.log("DEBRIEF REPORT");
   console.log("═══════════════════════════════════════════════════════════════\n");
 
-  const debrief = debriefingSystem.generateDebrief({}, actionLog, finalState, "cardiac-arrest-adult");
+  const debrief = debriefingSystem.generateDebrief(psm.history, actionLog, finalState, "cardiac-arrest-adult");
 
   // Display debrief
   console.log(`Overall Score: ${debrief.summary.overallScore}%`);

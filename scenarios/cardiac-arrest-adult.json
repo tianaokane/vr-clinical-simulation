@@ -465,7 +465,7 @@
       "reason": "Low post-ROSC blood pressure reduces organ perfusion."
     }
   ],
-  "actions": {
+  "actionMappings": {
     "checkResponse": {
       "label": "Check Response",
       "group": "Assessment",

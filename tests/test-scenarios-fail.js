@@ -2,7 +2,8 @@
 // FAIL TESTING: All 4 scenarios with deliberate protocol violations
 // Tests that the system correctly identifies and penalizes poor clinical decisions
 
-import { ScenarioLoader } from "../core/ScenarioLoader.js";
+import { loadScenarioSync } from "./testHelpers.js";
+import { PatientStateModel } from "../core/PatientStateModel.js";
 import { ActionClassifier } from "../core/ActionClassifier.js";
 import { DebriefingSystem } from "../core/DebriefingSystem.js";
 
@@ -20,11 +21,11 @@ await (async () => {
     console.log("=== Cardiac Arrest Scenario: FAIL TEST (Skip CPR) ===\n");
 
     try {
-        const loader = new ScenarioLoader("./scenarios", "./dialogue");
-        const { psm, scenario } = await loader.load("cardiac-arrest-adult");
+        const scenario = loadScenarioSync("cardiac-arrest-adult");
+        const psm = new PatientStateModel(scenario);
         console.log(`1. Loading scenario...\n   Loaded: ${scenario.scenarioName}\n   Initial rhythmState: ${psm.rhythmState}\n`);
 
-        const classifier = new ActionClassifier(scenario.actions, "cardiac-arrest-adult");
+        const classifier = new ActionClassifier(scenario.actionMappings, "cardiac-arrest-adult");
         const debriefSystem = new DebriefingSystem();
 
         console.log("2. Starting simulation...");
@@ -58,7 +59,7 @@ await (async () => {
             console.log(`  → Classified as: ${classification.actionId}`);
 
             if (classification.actionId) {
-                const action = scenario.actions[classification.actionId];
+                const action = scenario.actionMappings[classification.actionId];
                 if (action) {
                     psm.applyAction(classification.actionId);
                     actionLog[classification.actionId] = { timestamp: elapsed, quality: 0.5 };
@@ -86,7 +87,7 @@ await (async () => {
             oxygenSaturation: psm.parameters?.oxygenSaturation?.value
         };
 
-        const debrief = debriefSystem.generateDebrief(psm.simulationState, actionLog, finalState, "cardiac-arrest-adult");
+        const debrief = debriefSystem.generateDebrief(psm.history, actionLog, finalState, "cardiac-arrest-adult");
         const criticalFailures = debrief.learningPoints.filter(p => p.category === "critical");
         console.log(`Critical failures detected: ${criticalFailures.length}`);
         criticalFailures.forEach(cf => {
@@ -113,11 +114,11 @@ await (async () => {
     console.log("=== Fractured Femur Scenario: FAIL TEST (No Immobilization) ===\n");
 
     try {
-        const loader = new ScenarioLoader("./scenarios", "./dialogue");
-        const { psm, scenario } = await loader.load("fractured-femur-adult");
+        const scenario = loadScenarioSync("fractured-femur-adult");
+        const psm = new PatientStateModel(scenario);
         console.log(`1. Loading scenario...\n   Loaded: ${scenario.scenarioName}\n`);
 
-        const classifier = new ActionClassifier(scenario.actions, "fractured-femur-adult");
+        const classifier = new ActionClassifier(scenario.actionMappings, "fractured-femur-adult");
         const debriefSystem = new DebriefingSystem();
 
         console.log("2. Starting simulation...");
@@ -153,7 +154,7 @@ await (async () => {
             console.log(`  → Classified as: ${classification.actionId}`);
 
             if (classification.actionId) {
-                const action = scenario.actions[classification.actionId];
+                const action = scenario.actionMappings[classification.actionId];
                 if (action) {
                     psm.applyAction(classification.actionId);
                     actionLog[classification.actionId] = { timestamp: elapsed, quality: 0.5 };
@@ -178,7 +179,7 @@ await (async () => {
             bloodPressureSystolic: psm.parameters?.bloodPressureSystolic?.value
         };
 
-        const debrief = debriefSystem.generateDebrief(psm.simulationState, actionLog, finalState, "fractured-femur-adult");
+        const debrief = debriefSystem.generateDebrief(psm.history, actionLog, finalState, "fractured-femur-adult");
         const criticalFailures = debrief.learningPoints.filter(p => p.category === "critical");
         console.log(`Critical failures detected: ${criticalFailures.length}`);
         criticalFailures.forEach(cf => {
@@ -205,11 +206,11 @@ await (async () => {
     console.log("=== Sepsis Scenario: FAIL TEST (Delayed Antibiotics) ===\n");
 
     try {
-        const loader = new ScenarioLoader("./scenarios", "./dialogue");
-        const { psm, scenario } = await loader.load("sepsis-adult");
+        const scenario = loadScenarioSync("sepsis-adult");
+        const psm = new PatientStateModel(scenario);
         console.log(`1. Loading scenario...\n   Loaded: ${scenario.scenarioName}\n`);
 
-        const classifier = new ActionClassifier(scenario.actions, "sepsis-adult");
+        const classifier = new ActionClassifier(scenario.actionMappings, "sepsis-adult");
         const debriefSystem = new DebriefingSystem();
 
         console.log("2. Starting simulation...");
@@ -244,7 +245,7 @@ await (async () => {
             console.log(`  → Classified as: ${classification.actionId}`);
 
             if (classification.actionId) {
-                const action = scenario.actions[classification.actionId];
+                const action = scenario.actionMappings[classification.actionId];
                 if (action) {
                     psm.applyAction(classification.actionId);
                     actionLog[classification.actionId] = { timestamp: elapsed, quality: 0.5 };
@@ -269,7 +270,7 @@ await (async () => {
             bloodPressureSystolic: psm.parameters?.bloodPressureSystolic?.value
         };
 
-        const debrief = debriefSystem.generateDebrief(psm.simulationState, actionLog, finalState, "sepsis-adult");
+        const debrief = debriefSystem.generateDebrief(psm.history, actionLog, finalState, "sepsis-adult");
         const criticalFailures = debrief.learningPoints.filter(p => p.category === "critical");
         console.log(`Critical failures detected: ${criticalFailures.length}`);
         criticalFailures.forEach(cf => {
@@ -296,11 +297,11 @@ await (async () => {
     console.log("=== Anaphylaxis Scenario: FAIL TEST (Wrong Sequence) ===\n");
 
     try {
-        const loader = new ScenarioLoader("./scenarios", "./dialogue");
-        const { psm, scenario } = await loader.load("anaphylaxis-paediatric");
+        const scenario = loadScenarioSync("anaphylaxis-paediatric");
+        const psm = new PatientStateModel(scenario);
         console.log(`1. Loading scenario...\n   Loaded: ${scenario.scenarioName}\n`);
 
-        const classifier = new ActionClassifier(scenario.actions, "anaphylaxis-paediatric");
+        const classifier = new ActionClassifier(scenario.actionMappings, "anaphylaxis-paediatric");
         const debriefSystem = new DebriefingSystem();
 
         console.log("2. Starting simulation...");
@@ -335,7 +336,7 @@ await (async () => {
             console.log(`  → Classified as: ${classification.actionId}`);
 
             if (classification.actionId) {
-                const action = scenario.actions[classification.actionId];
+                const action = scenario.actionMappings[classification.actionId];
                 if (action) {
                     psm.applyAction(classification.actionId);
                     actionLog[classification.actionId] = { timestamp: elapsed, quality: 0.5 };
@@ -360,7 +361,7 @@ await (async () => {
             pulseRate: psm.parameters?.pulseRate?.value
         };
 
-        const debrief = debriefSystem.generateDebrief(psm.simulationState, actionLog, finalState, "anaphylaxis-paediatric");
+        const debrief = debriefSystem.generateDebrief(psm.history, actionLog, finalState, "anaphylaxis-paediatric");
         const criticalFailures = debrief.learningPoints.filter(p => p.category === "critical");
         console.log(`Critical failures detected: ${criticalFailures.length}`);
         criticalFailures.forEach(cf => {

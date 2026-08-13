@@ -229,6 +229,7 @@
 <script type="module">
     import { PatientStateModel } from './core/PatientStateModel.js'
     import { DialogueEngine } from './core/DialogueEngine.js'
+    import { CPRQualityAnalyzer } from './core/CPRQualityAnalyzer.js'
 
     // Add every scenario JSON here. The dashboard is generic after this.
     // You can also load a specific scenario using: index.html?scenario=-fractued-femur-adult
@@ -498,6 +499,14 @@
             groups.get(group).push([id, action])
         }
 
+        // Actions that don't author their own qualityEffects but are still
+        // physically "CPR" (e.g. resuming compressions after a shock) reuse
+        // cprCompressions' target ranges, since it's the same technique.
+        const CPR_LIKE_ACTION_IDS = ['cprCompressions', 'continueCPRAfterShock']
+        function qualityEffectsFor(id, action) {
+            return action.qualityEffects ?? (CPR_LIKE_ACTION_IDS.includes(id) ? actions['cprCompressions']?.qualityEffects : null)
+        }
+
         for (const [group, groupActions] of groups.entries()) {
             const wrapper = document.createElement('div')
             wrapper.className = 'actions-group'
@@ -511,6 +520,13 @@
             row.className = 'btn-row'
 
             for (const [id, action] of groupActions) {
+                const qualityEffects = qualityEffectsFor(id, action)
+
+                if (qualityEffects) {
+                    row.appendChild(buildMeasuredCPRControl(id, action, qualityEffects))
+                    continue
+                }
+
                 const button = document.createElement('button')
                 button.textContent = action.label ?? id
                 button.title = action.instruction ?? ''
@@ -530,6 +546,91 @@
             wrapper.appendChild(row)
             els.actionsList.appendChild(wrapper)
         }
+    }
+
+    // Builds the rate/depth-driven control for a CPR-measurable action.
+    // Instead of a hardcoded qualityScore, this computes a real quality
+    // value from measured compression rate/depth via CPRQualityAnalyzer,
+    // scored against the scenario's own qualityEffects target ranges.
+    // This is the manual stand-in for a future VR hand-tracking / CV
+    // pipeline — whatever eventually supplies real rate/depth samples
+    // plugs into the same CPRQualityAnalyzer.scoreCompression() call.
+    function buildMeasuredCPRControl(id, action, qualityEffects) {
+        const rateRange = qualityEffects.rateTargetPerMinute ?? {}
+        const depthRange = qualityEffects.depthTargetCm ?? {}
+        const rateMid = ((rateRange.min ?? 100) + (rateRange.max ?? 120)) / 2
+        const depthMid = ((depthRange.min ?? 5) + (depthRange.max ?? 6)) / 2
+
+        const wrapper = document.createElement('div')
+        wrapper.className = 'cpr-quality-control'
+        wrapper.style.cssText = 'display:flex; align-items:center; gap:6px; flex-wrap:wrap; border:1px solid #3a3a3a; border-radius:6px; padding:6px 8px; margin:2px 0;'
+
+        const title = document.createElement('span')
+        title.textContent = action.label ?? id
+        title.title = action.instruction ?? ''
+        title.style.cssText = 'font-weight:600; margin-right:4px;'
+        wrapper.appendChild(title)
+
+        const rateInput = document.createElement('input')
+        rateInput.type = 'number'
+        rateInput.value = Math.round(rateMid)
+        rateInput.step = 1
+        rateInput.style.width = '64px'
+        rateInput.title = 'Measured compression rate (per minute)'
+
+        const rateLbl = document.createElement('label')
+        rateLbl.textContent = 'rate/min'
+        rateLbl.style.cssText = 'font-size:11px; display:flex; align-items:center; gap:3px;'
+        rateLbl.appendChild(rateInput)
+        wrapper.appendChild(rateLbl)
+
+        const depthInput = document.createElement('input')
+        depthInput.type = 'number'
+        depthInput.value = depthMid
+        depthInput.step = 0.1
+        depthInput.style.width = '56px'
+        depthInput.title = 'Measured compression depth (cm)'
+
+        const depthLbl = document.createElement('label')
+        depthLbl.textContent = 'depth cm'
+        depthLbl.style.cssText = 'font-size:11px; display:flex; align-items:center; gap:3px;'
+        depthLbl.appendChild(depthInput)
+        wrapper.appendChild(depthLbl)
+
+        const scoreAndRun = (ratePerMinute, depthCm) => {
+            const quality = CPRQualityAnalyzer.scoreCompression({ ratePerMinute, depthCm }, qualityEffects)
+            addLog(`${action.label ?? id}: measured ${ratePerMinute}/min @ ${depthCm}cm → quality ${quality.toFixed(2)}`, 'info')
+            runAction(id, quality)
+        }
+
+        const applyBtn = document.createElement('button')
+        applyBtn.textContent = 'Apply measured'
+        applyBtn.className = buttonClassFor(id, action)
+        applyBtn.addEventListener('click', () => {
+            scoreAndRun(Number(rateInput.value), Number(depthInput.value))
+        })
+        wrapper.appendChild(applyBtn)
+
+        // Quick presets — these still go through the real analyzer rather
+        // than a hardcoded quality number, they just supply representative
+        // good/poor rate-depth pairs so testing doesn't require typing.
+        const goodBtn = document.createElement('button')
+        goodBtn.textContent = 'Good technique'
+        goodBtn.title = 'Preset: rate/depth centred in target range'
+        goodBtn.addEventListener('click', () => scoreAndRun(rateMid, depthMid))
+        wrapper.appendChild(goodBtn)
+
+        const poorBtn = document.createElement('button')
+        poorBtn.textContent = 'Poor technique'
+        poorBtn.title = 'Preset: rate/depth well outside target range'
+        poorBtn.addEventListener('click', () => {
+            const poorRate = Math.max(20, (rateRange.min ?? 100) - 40)
+            const poorDepth = Math.max(0.5, (depthRange.min ?? 5) - 3)
+            scoreAndRun(poorRate, poorDepth)
+        })
+        wrapper.appendChild(poorBtn)
+
+        return wrapper
     }
 
     function dialogueActionFor(actionId, action = {}) {

@@ -145,7 +145,7 @@ export class DebriefingSystem {
     // Score each pillar of performance
     debrief.scores.timing = this._scoreTiming(actionLog, metrics, scenarioId, goldStandard);
     debrief.scores.sequence = this._scoreSequence(actionLog, scenarioId);
-    debrief.scores.technique = this._scoreTechnique(metrics, scenarioId, goldStandard);
+    debrief.scores.technique = this._scoreTechnique(metrics, actionLog, scenarioId, goldStandard);
     debrief.scores.outcome = this._scoreOutcome(finalState, scenarioId, goldStandard);
 
     // Overall assessment using scenario-specific weights
@@ -177,7 +177,24 @@ export class DebriefingSystem {
     return debrief;
   }
 
-  // Extract key metrics from PSM action log
+  // Extract key metrics from PSM action log.
+  //
+  // psmLog is expected to be PatientStateModel#history — the array of
+  // snapshot/action/scenario_outcome entries logged during the run (see
+  // vr/Scene.js#handleScenarioEnd, which passes `this.psmInstance.history`
+  // here as the real, production call site). This used to be a stub that
+  // returned the same defaults regardless of what happened in the
+  // scenario, which is why e.g. a cardiac-arrest run with real
+  // quality=0.85 CPR still scored Technique at 30% — averageCPRQuality
+  // never left 0. CPR-relevant fields below are now derived from the
+  // actual per-action quality values PatientStateModel#applyAction logs.
+  //
+  // painScoreChange, bleedingControlQuality, lactateReduction,
+  // urineOutputMonitored and bloodPressureRestored are intentionally left
+  // at their safe defaults — they're outside the scope of the CPR-quality
+  // fix, and a falsy/zero default means their optional technique-score
+  // bonus checks simply don't fire (same behaviour as before), rather
+  // than fabricating a score for something not actually measured yet.
   _extractMetrics(psmLog) {
     const metrics = {
       timeToFirstAction: null,
@@ -203,6 +220,74 @@ export class DebriefingSystem {
       bloodPressureRestored: false
     };
 
+    // Guard rather than throw if a caller still passes something other
+    // than the history array (e.g. a stale simulationState snapshot) —
+    // return the safe defaults above in that case.
+    if (!Array.isArray(psmLog)) {
+      return metrics;
+    }
+
+    const actionEntries = psmLog.filter(entry => entry?.type === 'action');
+
+    // --- CPR quality (cardiac-arrest-adult) ---------------------------
+    const CPR_ACTION_IDS = ['cprCompressions', 'continueCPRAfterShock'];
+    const cprEntries = actionEntries
+      .filter(entry => CPR_ACTION_IDS.includes(entry.action) && typeof entry.quality === 'number')
+      .sort((a, b) => a.time - b.time);
+
+    if (cprEntries.length) {
+      metrics.totalCompressions = cprEntries.length;
+      metrics.averageCPRQuality =
+        cprEntries.reduce((sum, entry) => sum + entry.quality, 0) / cprEntries.length;
+
+      // A "pause in CPR" is a gap between consecutive CPR actions long
+      // enough that compressions clearly stopped rather than just being
+      // logged a couple of seconds apart. 10s mirrors the >10s check
+      // already applied to maxPauseDuration in _scoreTechnique.
+      const PAUSE_THRESHOLD_SECONDS = 10;
+      let pauseCount = 0;
+      let maxPause = 0;
+
+      for (let i = 1; i < cprEntries.length; i++) {
+        const gap = cprEntries[i].time - cprEntries[i - 1].time;
+        if (gap > PAUSE_THRESHOLD_SECONDS) {
+          pauseCount++;
+          maxPause = Math.max(maxPause, gap);
+        }
+      }
+
+      metrics.pausesInCPR = pauseCount;
+      metrics.maxPauseDuration = maxPause;
+    }
+
+    metrics.shockCount = actionEntries.filter(entry => entry.action === 'shockIfAdvised').length;
+
+    // --- Timing (first occurrence of each key action, in seconds) -----
+    const firstTimeOf = (actionId) => {
+      const entry = actionEntries.find(e => e.action === actionId);
+      return entry ? entry.time : null;
+    };
+
+    metrics.timeToFirstAction = actionEntries.length ? actionEntries[0].time : null;
+    metrics.timeToCheckResponse = firstTimeOf('checkResponse');
+    // "Call for help" is named differently per scenario.
+    metrics.timeToCallForHelp =
+      firstTimeOf('callCrashTeam') ??
+      firstTimeOf('callSeniorTraumaHelp') ??
+      firstTimeOf('callSeniorSepsisHelp') ??
+      firstTimeOf('callPaediatricSeniorHelp');
+    metrics.timeToFirstCPR = firstTimeOf('cprCompressions');
+    metrics.timeToAEDPads = firstTimeOf('applyAEDPads');
+    metrics.timeToShock = firstTimeOf('shockIfAdvised');
+    metrics.timeToBloodCultures = firstTimeOf('takeBloodCultures');
+    metrics.timeToAntibiotics = firstTimeOf('administerAntibioticsAsPrescribed');
+    metrics.timeToFluidResuscitation = firstTimeOf('giveIVFluidsAsPrescribed');
+    metrics.timeToAdrenaline = firstTimeOf('giveIMAdrenaline');
+    metrics.timeToOxygen = firstTimeOf('giveHighFlowOxygen') ?? firstTimeOf('applyOxygenIfHypoxic');
+
+    const roscOutcome = psmLog.find(entry => entry?.type === 'scenario_outcome' && entry.id === 'rosc_achieved');
+    metrics.timeToROSC = roscOutcome ? roscOutcome.time : null;
+
     return metrics;
   }
 
@@ -210,51 +295,59 @@ export class DebriefingSystem {
   _scoreTiming(actionLog, metrics, scenarioId, goldStandard) {
     let timingScore = 100;
 
+    // An action that was never performed at all can't have "beaten" its
+    // timing target — `actionLog.x?.timestamp > threshold` is `undefined >
+    // threshold`, which JS evaluates to `false`, so a skipped action was
+    // silently scored as "on time" instead of the worst-case miss it
+    // actually is. `late()` treats missing and late the same way.
+    const late = (action, thresholdSeconds) =>
+      !actionLog[action] || actionLog[action].timestamp > (thresholdSeconds * 1000);
+
     if (scenarioId === "cardiac-arrest-adult") {
       // Cardiac arrest timing
-      if (actionLog.checkResponse?.timestamp > (goldStandard.timeToFirstCheckSeconds * 1000)) {
+      if (late('checkResponse', goldStandard.timeToFirstCheckSeconds)) {
         timingScore -= 5;
       }
-      if (actionLog.callCrashTeam?.timestamp > (goldStandard.timeToCallForHelpSeconds * 1000)) {
+      if (late('callCrashTeam', goldStandard.timeToCallForHelpSeconds)) {
         timingScore -= 15;
       }
-      if (actionLog.cprCompressions?.timestamp > (goldStandard.timeToFirstCPRSeconds * 1000)) {
+      if (late('cprCompressions', goldStandard.timeToFirstCPRSeconds)) {
         timingScore -= 20;
       }
-      if (actionLog.applyAEDPads?.timestamp > (goldStandard.timeToAEDDeploymentSeconds * 1000)) {
+      if (late('applyAEDPads', goldStandard.timeToAEDDeploymentSeconds)) {
         timingScore -= 10;
       }
-    } 
+    }
     else if (scenarioId === "fractured-femur-adult") {
       // Trauma/fracture timing
-      if (actionLog.callSeniorTraumaHelp?.timestamp > (goldStandard.timeToCallSeniorSeconds * 1000)) {
+      if (late('callSeniorTraumaHelp', goldStandard.timeToCallSeniorSeconds)) {
         timingScore -= 15;
       }
-      if (actionLog.checkDistalPulse?.timestamp > (goldStandard.timeToNeurovascularCheckSeconds * 1000)) {
+      if (late('checkDistalPulse', goldStandard.timeToNeurovascularCheckSeconds)) {
         timingScore -= 10;
       }
-      if (actionLog.immobiliseAndPad?.timestamp > (goldStandard.timeToImmobilisationSeconds * 1000)) {
+      if (late('immobiliseAndPad', goldStandard.timeToImmobilisationSeconds)) {
         timingScore -= 20;
       }
     }
     else if (scenarioId === "sepsis-adult") {
       // Sepsis timing (early recognition is critical)
-      if (actionLog.takeBloodCultures?.timestamp > (goldStandard.timeToBloodCulturesSeconds * 1000)) {
+      if (late('takeBloodCultures', goldStandard.timeToBloodCulturesSeconds)) {
         timingScore -= 10;
       }
-      if (actionLog.administerAntibioticsAsPrescribed?.timestamp > (goldStandard.timeToAntibioticsSeconds * 1000)) {
+      if (late('administerAntibioticsAsPrescribed', goldStandard.timeToAntibioticsSeconds)) {
         timingScore -= 25; // Antibiotic timing is critical in sepsis
       }
-      if (actionLog.giveIVFluidsAsPrescribed?.timestamp > (goldStandard.timeToFluidResuscitationSeconds * 1000)) {
+      if (late('giveIVFluidsAsPrescribed', goldStandard.timeToFluidResuscitationSeconds)) {
         timingScore -= 15;
       }
     }
     else if (scenarioId === "anaphylaxis-paediatric") {
       // Anaphylaxis timing (adrenaline is first-line)
-      if (actionLog.giveIMAdrenaline?.timestamp > (goldStandard.timeToAdrenalineSeconds * 1000)) {
+      if (late('giveIMAdrenaline', goldStandard.timeToAdrenalineSeconds)) {
         timingScore -= 25; // Delayed adrenaline is critical failure
       }
-      if (actionLog.giveHighFlowOxygen?.timestamp > (goldStandard.timeToOxygenSeconds * 1000)) {
+      if (late('giveHighFlowOxygen', goldStandard.timeToOxygenSeconds)) {
         timingScore -= 15;
       }
     }
@@ -344,12 +437,27 @@ export class DebriefingSystem {
   }
 
   // Score technical quality (0-100)
-  _scoreTechnique(metrics, scenarioId, goldStandard) {
+  //
+  // `actionLog` is used only to catch the "critical action never attempted
+  // at all" case. `metrics` currently comes from `_extractMetrics()`, which
+  // is a stub that always returns hardcoded zeros (averageCPRQuality: 0,
+  // pausesInCPR: 0, etc.) rather than real numbers computed from the PSM
+  // history — so today the metrics-based checks below never fire either
+  // way. That stub is a separate, larger gap (real CPR-quality/pause
+  // extraction from psmLog) that hasn't been implemented yet; flagging it
+  // rather than silently leaving techniqueScore's only real signal to be
+  // "did they attempt the action at all".
+  _scoreTechnique(metrics, actionLog, scenarioId, goldStandard) {
     let techniqueScore = 100;
 
     if (scenarioId === "cardiac-arrest-adult") {
-      // CPR quality assessment
-      if (metrics.averageCPRQuality && metrics.averageCPRQuality < goldStandard.minCompressionQuality) {
+      if (!actionLog.cprCompressions) {
+        // CPR is the core technique being assessed in this scenario. No
+        // attempt at all must not score the same as a perfect attempt —
+        // previously `metrics.averageCPRQuality && ...` treated the stubbed
+        // 0 (falsy) as "no data, skip check", so this silently scored 100.
+        techniqueScore -= 100;
+      } else if (typeof metrics.averageCPRQuality === 'number' && metrics.averageCPRQuality < goldStandard.minCompressionQuality) {
         const qualityGap = goldStandard.minCompressionQuality - metrics.averageCPRQuality;
         techniqueScore -= qualityGap * 100;
       }
@@ -363,8 +471,9 @@ export class DebriefingSystem {
       }
     }
     else if (scenarioId === "fractured-femur-adult") {
-      // Bleeding control quality
-      if (metrics.bleedingControlQuality && metrics.bleedingControlQuality < goldStandard.bleedingControlQuality) {
+      if (!actionLog.immobiliseAndPad) {
+        techniqueScore -= 60;
+      } else if (metrics.bleedingControlQuality && metrics.bleedingControlQuality < goldStandard.bleedingControlQuality) {
         techniqueScore -= 20;
       }
       // Pain management (was pain reduced?)
@@ -375,11 +484,11 @@ export class DebriefingSystem {
     else if (scenarioId === "sepsis-adult") {
       // Sepsis is more about systematic approach than individual technique
       // Score based on completion of all monitoring/interventions
-      techniqueScore = 85; // Baseline for sepsis
+      techniqueScore = actionLog.administerAntibioticsAsPrescribed ? 85 : 20; // Baseline for sepsis
     }
     else if (scenarioId === "anaphylaxis-paediatric") {
       // Anaphylaxis: adrenaline administration quality + positioning
-      techniqueScore = 85; // Baseline for anaphylaxis
+      techniqueScore = actionLog.giveIMAdrenaline ? 85 : 20; // Baseline for anaphylaxis
     }
 
     return Math.max(0, techniqueScore);
@@ -611,7 +720,7 @@ export class DebriefingSystem {
 
     // Scenario-specific learning points
     if (scenarioId === "cardiac-arrest-adult") {
-      this._generateCardiacArrestLearningPoints(points, actionLog, scores, goldStandard);
+      this._generateCardiacArrestLearningPoints(points, actionLog, metrics, scores, goldStandard);
     }
     else if (scenarioId === "fractured-femur-adult") {
       this._generateTraumaLearningPoints(points, actionLog, scores, goldStandard);
@@ -627,7 +736,15 @@ export class DebriefingSystem {
   }
 
   // Cardiac arrest specific learning points
-  _generateCardiacArrestLearningPoints(points, actionLog, scores, goldStandard) {
+  //
+  // NOTE: this previously didn't receive `metrics` as a parameter at all,
+  // but referenced the bare name `metrics.averageCPRQuality` below anyway —
+  // a ReferenceError ("metrics is not defined") that crashed the whole
+  // debrief any time a trainee had no critical failures but a technique
+  // score under 80 (i.e. cleared the "did the basics" bar but wasn't
+  // flagged as an outright fail). Now threaded through from
+  // _generateLearningPoints like the other scenario handlers already do.
+  _generateCardiacArrestLearningPoints(points, actionLog, metrics, scores, goldStandard) {
     // ALWAYS check for critical failures first — these override everything
     this._checkCardiacArrestCriticalFailures(actionLog, points);
     
