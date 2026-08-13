@@ -142,27 +142,28 @@ export class UIManager {
   // VITALS HUD UPDATES
   // ═══════════════════════════════════════════════════════════════════════════
 
-  updateVitalsHUD(psmState) {
-    // Update real-time vitals display
+  updateVitalsHUD(parameters) {
+    // Update real-time vitals display from PSM parameters
     const hrElement = document.getElementById('vitals-hr');
     const bpElement = document.getElementById('vitals-bp');
     const spo2Element = document.getElementById('vitals-spo2');
     const consciousnessElement = document.getElementById('vitals-consciousness');
 
-    if (hrElement) {
-      hrElement.textContent = `HR: ${Math.round(psmState.pulseRate)} bpm`;
+    if (hrElement && parameters?.pulseRate) {
+      const hr = Math.round(parameters.pulseRate.value || 0);
+      hrElement.textContent = `HR: ${hr} bpm`;
       // Color-code: green < 100, yellow 100-120, red > 120
-      if (psmState.pulseRate < 100) {
+      if (hr < 100) {
         hrElement.className = 'vitals-normal';
-      } else if (psmState.pulseRate < 120) {
+      } else if (hr < 120) {
         hrElement.className = 'vitals-warning';
       } else {
         hrElement.className = 'vitals-critical';
       }
     }
 
-    if (bpElement) {
-      const systolic = Math.round(psmState.bloodPressureSystolic || 120);
+    if (bpElement && parameters?.bloodPressureSystolic) {
+      const systolic = Math.round(parameters.bloodPressureSystolic.value || 120);
       bpElement.textContent = `BP: ${systolic}/80 mmHg`;
       // Color-code: green 90-140, yellow 70-89 or 140-160, red < 70 or > 160
       if (systolic >= 90 && systolic <= 140) {
@@ -174,8 +175,8 @@ export class UIManager {
       }
     }
 
-    if (spo2Element) {
-      const spo2 = Math.round(psmState.oxygenSaturation || 95);
+    if (spo2Element && parameters?.oxygenSaturation) {
+      const spo2 = Math.round(parameters.oxygenSaturation.value || 95);
       spo2Element.textContent = `SpO₂: ${spo2}%`;
       // Color-code: green >= 94, yellow 90-93, red < 90
       if (spo2 >= 94) {
@@ -187,8 +188,8 @@ export class UIManager {
       }
     }
 
-    if (consciousnessElement) {
-      const consciousnessPercent = Math.round((psmState.consciousness || 1.0) * 100);
+    if (consciousnessElement && parameters?.consciousness) {
+      const consciousnessPercent = Math.round((parameters.consciousness.value || 1.0) * 100);
       consciousnessElement.textContent = `Consciousness: ${consciousnessPercent}%`;
       if (consciousnessPercent >= 80) {
         consciousnessElement.className = 'vitals-normal';

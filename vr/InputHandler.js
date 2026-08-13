@@ -1,4 +1,5 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
 export class InputHandler {
   constructor(scene, renderer) {
     this.scene = scene;
@@ -110,8 +111,9 @@ export class InputHandler {
   }
 
   onMouseDown(event) {
-    // Request pointer lock on click (for immersive mouse look)
-    if (!this.mouse.isLocked) {
+    // Only request pointer lock during scenario (PATIENT_ROOM state)
+    // Don't lock pointer during menus/navigation
+    if (this.scene.state === this.scene.STATES.PATIENT_ROOM && !this.mouse.isLocked) {
       this.renderer.domElement.requestPointerLock =
         this.renderer.domElement.requestPointerLock ||
         this.renderer.domElement.mozRequestPointerLock;

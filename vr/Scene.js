@@ -1,4 +1,4 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 import { VirtualPatient } from './VirtualPatient.js';
 import { PatientStateModel } from '../core/PatientStateModel.js';
 import { DialogueEngine } from '../core/DialogueEngine.js';
@@ -165,7 +165,7 @@ export class Scene {
 
         // Also update vitals HUD if available
         if (window.uiManager) {
-          window.uiManager.updateVitalsHUD(psmState);
+          window.uiManager.updateVitalsHUD(this.psmInstance.parameters);
         }
 
         // Check for scenario end conditions
@@ -181,7 +181,7 @@ export class Scene {
 
       // 7. Initialize vitals display
       if (window.uiManager) {
-        window.uiManager.updateVitalsHUD(this.psmInstance.simulationState);
+        window.uiManager.updateVitalsHUD(this.psmInstance.parameters);
       }
 
       // 8. Record scenario start time
@@ -340,77 +340,73 @@ export class Scene {
   // ═══════════════════════════════════════════════════════════════════════════
 
   buildHallway() {
-    this.hallwayGroup = new THREE.Group();
-    this.scene.add(this.hallwayGroup);
-
-    // Hallway dimensions
-    const hallwayLength = 30; // z-axis
-    const hallwayWidth = 6;   // x-axis
-    const hallwayHeight = 3;  // y-axis
-
-    // Walls (white, clean cartoon aesthetic)
-    const wallMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf5f5f5, // Off-white
-      roughness: 0.8,
+    // Create hallway group
+    const hallwayGroup = new THREE.Group();
+    
+    // Define clinical color palettes
+    const wallMat = new THREE.MeshStandardMaterial({ 
+      color: 0xF0F4F8, // Off-white/light blue clinical wall
+      roughness: 0.4,
       metalness: 0.0
     });
-
+    const floorMat = new THREE.MeshStandardMaterial({ 
+      color: 0xDCE2E6, // Glossy linoleum hospital floor
+      roughness: 0.1,
+      metalness: 0.0
+    });
+    const ceilingMat = new THREE.MeshStandardMaterial({ 
+      color: 0xFFFFFF, // Pure white ceiling
+      roughness: 0.9,
+      metalness: 0.0
+    });
+    
+    // Hallway dimensions
+    const length = 30;
+    const width = 4;
+    const height = 3;
+    
+    // Floor
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(width, length), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.05;
+    floor.receiveShadow = true;
+    hallwayGroup.add(floor);
+    
     // Left wall
-    const leftWall = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, hallwayHeight, hallwayLength),
-      wallMaterial
-    );
-    leftWall.position.set(-hallwayWidth / 2, hallwayHeight / 2, -hallwayLength / 2);
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(length, height), wallMat);
+    leftWall.position.set(-width/2, height/2, 0);
+    leftWall.rotation.y = Math.PI / 2;
     leftWall.castShadow = true;
     leftWall.receiveShadow = true;
-    this.hallwayGroup.add(leftWall);
-
-    // Right wall
-    const rightWall = new THREE.Mesh(
-      new THREE.BoxGeometry(0.1, hallwayHeight, hallwayLength),
-      wallMaterial
-    );
-    rightWall.position.set(hallwayWidth / 2, hallwayHeight / 2, -hallwayLength / 2);
-    rightWall.castShadow = true;
-    rightWall.receiveShadow = true;
-    this.hallwayGroup.add(rightWall);
-
-    // Back wall (at menu end)
-    const backWall = new THREE.Mesh(
-      new THREE.BoxGeometry(hallwayWidth, hallwayHeight, 0.1),
-      wallMaterial
-    );
-    backWall.position.set(0, hallwayHeight / 2, 0.05);
-    backWall.castShadow = true;
-    backWall.receiveShadow = true;
-    this.hallwayGroup.add(backWall);
-
-    // Floor (light grey)
-    const floorMaterial = new THREE.MeshStandardMaterial({
-      color: 0xe0e0e0, // Light grey
-      roughness: 0.6,
-      metalness: 0.0
-    });
-
-    const floor = new THREE.Mesh(
-      new THREE.BoxGeometry(hallwayWidth, 0.1, hallwayLength),
-      floorMaterial
-    );
-    floor.position.set(0, -0.05, -hallwayLength / 2);
-    floor.castShadow = true;
-    floor.receiveShadow = true;
-    this.hallwayGroup.add(floor);
-
+    hallwayGroup.add(leftWall);
+    
+    // Right wall (clone left)
+    const rightWall = leftWall.clone();
+    rightWall.position.x = width/2;
+    rightWall.rotation.y = -Math.PI / 2;
+    hallwayGroup.add(rightWall);
+    
     // Ceiling
-    const ceiling = new THREE.Mesh(
-      new THREE.BoxGeometry(hallwayWidth, 0.1, hallwayLength),
-      wallMaterial
-    );
-    ceiling.position.set(0, hallwayHeight, -hallwayLength / 2);
-    ceiling.castShadow = true;
+    const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(width, length), ceilingMat);
+    ceiling.rotation.x = Math.PI / 2;
+    ceiling.position.y = height;
     ceiling.receiveShadow = true;
-    this.hallwayGroup.add(ceiling);
-
+    hallwayGroup.add(ceiling);
+    
+    // Procedural ceiling lights
+    for (let z = -length/2 + 3; z < length/2; z += 6) {
+      const lightFixture = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 0.1, 2),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      lightFixture.position.set(0, height - 0.05, z);
+      lightFixture.castShadow = true;
+      hallwayGroup.add(lightFixture);
+    }
+    
+    this.hallwayGroup = hallwayGroup;
+    this.scene.add(hallwayGroup);
+    
     // Board at far end
     this.buildBoard();
   }
